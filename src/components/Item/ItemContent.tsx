@@ -24,6 +24,7 @@ import { c, useGetDateColorFn, useGetTagColorFn } from '../helpers';
 import { EditState, EditingState, Item, isEditing } from '../types';
 import { DateAndTime, RelativeDate } from './DateAndTime';
 import { InlineMetadata } from './InlineMetadata';
+import { SubBoardIndicator } from './SubBoardIndicator';
 import {
   constructDatePicker,
   constructMenuDatePickerOnChange,
@@ -304,6 +305,13 @@ export const ItemContent = memo(function ItemContent({
           />
           <InlineMetadata item={item} stateManager={stateManager} />
           <Tags tags={item.data.metadata.tags} searchQuery={searchQuery} />
+          {item.data.metadata.subBoard?.isSubBoard && (
+            <SubBoardIndicator
+              subBoard={item.data.metadata.subBoard}
+              file={item.data.metadata.file}
+              sourcePath={filePath}
+            />
+          )}
         </div>
       )}
     </div>

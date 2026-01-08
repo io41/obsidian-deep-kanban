@@ -14,6 +14,7 @@ import { t } from 'src/lang/helpers';
 import { DndScope } from '../dnd/components/Scope';
 import { getBoardModifiers } from '../helpers/boardModifiers';
 import { frontmatterKey } from '../parsers/common';
+import { Breadcrumb } from './Breadcrumb/Breadcrumb';
 import { Icon } from './Icon/Icon';
 import { Lanes } from './Lane/Lane';
 import { LaneForm } from './Lane/LaneForm';
@@ -225,6 +226,12 @@ export const Kanban = ({ view, stateManager }: KanbanProps) => {
             ])}
             {...html5DragHandlers}
           >
+            {boardData.data.frontmatter?.['kanban-parent-boards'] && (
+              <Breadcrumb
+                parentBoards={boardData.data.frontmatter['kanban-parent-boards']}
+                currentBoardPath={filePath}
+              />
+            )}
             {(isLaneFormVisible || boardData.children.length === 0) && (
               <LaneForm onNewLane={onNewLane} closeLaneForm={closeLaneForm} />
             )}

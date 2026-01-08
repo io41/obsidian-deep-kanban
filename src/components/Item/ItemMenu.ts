@@ -5,6 +5,7 @@ import { StateManager } from 'src/StateManager';
 import { Path } from 'src/dnd/types';
 import { moveEntity } from 'src/dnd/util/data';
 import { t } from 'src/lang/helpers';
+import { createSubBoard } from 'src/helpers/subBoardHelpers';
 
 import { BoardModifiers } from '../../helpers/boardModifiers';
 import { applyTemplate, escapeRegExpStr, generateInstanceId } from '../helpers';
@@ -123,6 +124,31 @@ export function useItemMenu({
             });
         })
         .addSeparator();
+
+      // Sub-board menu items
+      if (item.data.metadata.subBoard?.isSubBoard && item.data.metadata.file) {
+        menu.addItem((i) => {
+          i.setIcon('lucide-layers')
+            .setTitle(t('Open sub-board'))
+            .onClick(() => {
+              stateManager.app.workspace.openLinkText(
+                item.data.metadata.file.path,
+                stateManager.file.path,
+                false
+              );
+            });
+        });
+      }
+
+      menu.addItem((i) => {
+        i.setIcon('lucide-layout-grid')
+          .setTitle(t('Create sub-board'))
+          .onClick(async () => {
+            await createSubBoard(stateManager, boardModifiers, item, path);
+          });
+      });
+
+      menu.addSeparator();
 
       if (/\n/.test(item.data.titleRaw)) {
         menu.addItem((i) => {

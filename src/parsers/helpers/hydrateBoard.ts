@@ -1,4 +1,4 @@
-import { moment } from 'obsidian';
+import { TFile, moment } from 'obsidian';
 import { StateManager } from 'src/StateManager';
 import { c, escapeRegExpStr, getDateColorFn } from 'src/components/helpers';
 import { Board, DataTypes, DateColor, Item, Lane } from 'src/components/types';
@@ -6,7 +6,7 @@ import { Path } from 'src/dnd/types';
 import { getEntityFromPath } from 'src/dnd/util/data';
 import { Op } from 'src/helpers/patch';
 
-import { getSearchValue } from '../common';
+import { frontmatterKey, getSearchValue } from '../common';
 
 export function hydrateLane(stateManager: StateManager, lane: Lane) {
   return lane;
@@ -127,6 +127,20 @@ export function hydrateItem(stateManager: StateManager, item: Item) {
 
     if (file) {
       item.data.metadata.file = file;
+
+      // Check if linked file is a kanban board (sub-board detection)
+      if (file instanceof TFile) {
+        const linkedFileCache = stateManager.app.metadataCache.getFileCache(file);
+        if (linkedFileCache?.frontmatter?.[frontmatterKey] === 'board') {
+          // Mark as sub-board - counts will be loaded async by the component
+          item.data.metadata.subBoard = {
+            isSubBoard: true,
+            openCount: 0,
+            totalCount: 0,
+            lastUpdated: Date.now(),
+          };
+        }
+      }
     }
   }
 

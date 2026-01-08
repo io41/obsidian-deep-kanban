@@ -64,6 +64,14 @@ export interface FileMetadata {
   [k: string]: PageData;
 }
 
+export interface SubBoardInfo {
+  isSubBoard: boolean;
+  openCount: number;
+  totalCount: number;
+  lastUpdated: number;
+  error?: string; // "File not found", "Circular reference"
+}
+
 export interface ItemMetadata {
   dateStr?: string;
   date?: moment.Moment;
@@ -75,6 +83,7 @@ export interface ItemMetadata {
   fileMetadata?: FileMetadata;
   fileMetadataOrder?: string[];
   inlineMetadata?: InlineField[];
+  subBoard?: SubBoardInfo;
 }
 
 export interface ItemData {
