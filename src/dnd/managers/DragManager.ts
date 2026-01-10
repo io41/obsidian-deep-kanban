@@ -466,7 +466,7 @@ export function useDragHandle(
     };
 
     handle.addEventListener('pointerdown', onPointerDown);
-    handle.addEventListener('touchstart', swallowTouchEvent);
+    handle.addEventListener('touchstart', swallowTouchEvent, { passive: true });
 
     return () => {
       handle.removeEventListener('pointerdown', onPointerDown);
@@ -495,6 +495,7 @@ export function createHTMLDndHandlers(stateManager: StateManager) {
 
   const onDrop = useCallback(
     async (e: DragEvent) => {
+      e.preventDefault();
       dndManager.dragManager.dragEndHTML(
         e,
         stateManager.getAView().id,
