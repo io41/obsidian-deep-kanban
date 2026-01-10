@@ -254,9 +254,19 @@ export class StateManager {
       'show-board-settings': this.getSettingRaw('show-board-settings', suppliedSettings) ?? true,
       'show-search': this.getSettingRaw('show-search', suppliedSettings) ?? true,
       'show-set-view': this.getSettingRaw('show-set-view', suppliedSettings) ?? true,
-      'tag-colors': this.getSettingRaw('tag-colors', suppliedSettings) ?? [],
-      'tag-sort': this.getSettingRaw('tag-sort', suppliedSettings) ?? [],
-      'date-colors': this.getSettingRaw('date-colors', suppliedSettings) ?? [],
+      // For array settings, fall back to global if local is empty or undefined
+      'tag-colors':
+        (this.getSettingRaw('tag-colors', suppliedSettings) as any[])?.length > 0
+          ? this.getSettingRaw('tag-colors', suppliedSettings)
+          : this.getGlobalSetting('tag-colors') ?? [],
+      'tag-sort':
+        (this.getSettingRaw('tag-sort', suppliedSettings) as any[])?.length > 0
+          ? this.getSettingRaw('tag-sort', suppliedSettings)
+          : this.getGlobalSetting('tag-sort') ?? [],
+      'date-colors':
+        (this.getSettingRaw('date-colors', suppliedSettings) as any[])?.length > 0
+          ? this.getSettingRaw('date-colors', suppliedSettings)
+          : this.getGlobalSetting('date-colors') ?? [],
       'tag-action': this.getSettingRaw('tag-action', suppliedSettings) ?? 'obsidian',
     };
   }
