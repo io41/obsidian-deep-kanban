@@ -43,6 +43,19 @@
 | [#714](bug-714.md) | Subbullet checkboxes cut off | Same fix as #705 |
 | [#730](bug-730.md) | Checkboxes are cut off | Same fix as #705 |
 
+### Commit: cf56fdf (2026-01-10)
+
+| Issue | Title | Fix |
+|-------|-------|-----|
+| [#1110](bug-1110.md) | Scroll speed too fast | Reduced `scrollStrengthModifier` from 8 to 5 (`src/dnd/managers/ScrollManager.ts:26`) |
+| [#596](bug-596.md) | Middle click opens two panes | Added `stopPropagation()` to onLinkClick handler (`src/helpers/renderMarkdown.ts:60`) |
+
+### Bugs Verified (Investigation Complete)
+
+| Issue | Title | Notes |
+|-------|-------|-------|
+| [#1006](bug-1006.md) | Time trigger not recognized (23:01 → 2023-01-01) | moment.js parsing issue - needs format specification fix |
+
 ### Bugs Marked Won't Fix (Theme Issues)
 
 | Issue | Title | Reason |
