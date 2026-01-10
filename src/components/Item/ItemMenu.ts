@@ -1,5 +1,5 @@
 import update from 'immutability-helper';
-import { Menu, Platform, TFile, TFolder } from 'obsidian';
+import { Menu, Notice, Platform, TFile, TFolder } from 'obsidian';
 import { Dispatch, StateUpdater, useCallback } from 'preact/hooks';
 import { StateManager } from 'src/StateManager';
 import { Path } from 'src/dnd/types';
@@ -23,6 +23,7 @@ const wikilinkRegEx = /!?\[\[([^\]]*)\]\]/g;
 const mdLinkRegEx = /!?\[([^\]]*)\]\([^)]*\)/g;
 const tagRegEx = /#([^\u2000-\u206F\u2E00-\u2E7F'!"#$%&()*+,.:;<=>?@^`{|}~[\]\\\s\n\r]+)/g;
 const dataviewInlineRegEx = /\[([^\]]+)::\s*[^\]]*\]/g;
+const kanbanDateRegEx = /@@?\{[^}]+\}/g;
 const condenceWhiteSpaceRE = /\s+/g;
 
 interface UseItemMenuParams {
@@ -59,21 +60,28 @@ export function useItemMenu({
             .onClick(async () => {
               const prevTitle = item.data.titleRaw.split('\n')[0].trim();
 
-              // Extract tags and Dataview inline fields to preserve them in the card after the link
+              // Extract tags, Dataview fields, and Kanban dates to preserve them in the card after the link
               const tagMatches = prevTitle.match(tagRegEx) || [];
               const dataviewMatches = prevTitle.match(dataviewInlineRegEx) || [];
-              const preservedParts = [...tagMatches, ...dataviewMatches].join(' ');
+              const dateMatches = prevTitle.match(kanbanDateRegEx) || [];
+              const preservedParts = [...tagMatches, ...dataviewMatches, ...dateMatches].join(' ');
 
-              // Remove tags and Dataview fields completely from filename
-              const sanitizedTitle = prevTitle
+              // Remove tags, Dataview fields, and Kanban dates completely from filename
+              let sanitizedTitle = prevTitle
                 .replace(embedRegEx, '$1')
                 .replace(wikilinkRegEx, '$1')
                 .replace(mdLinkRegEx, '$1')
                 .replace(tagRegEx, '')
                 .replace(dataviewInlineRegEx, '')
+                .replace(kanbanDateRegEx, '')
                 .replace(illegalCharsRegEx, ' ')
                 .trim()
                 .replace(condenceWhiteSpaceRE, ' ');
+
+              // Truncate to avoid ENAMETOOLONG errors (max 200 chars, leaving room for .md extension)
+              if (sanitizedTitle.length > 200) {
+                sanitizedTitle = sanitizedTitle.slice(0, 200).trim();
+              }
 
               const newNoteFolder = stateManager.getSetting('new-note-folder');
               const newNoteTemplatePath = stateManager.getSetting('new-note-template');
@@ -82,26 +90,31 @@ export function useItemMenu({
                 ? (stateManager.app.vault.getAbstractFileByPath(newNoteFolder as string) as TFolder)
                 : stateManager.app.fileManager.getNewFileParent(stateManager.file.path);
 
-              const newFile = (await (stateManager.app.fileManager as any).createNewMarkdownFile(
-                targetFolder,
-                sanitizedTitle
-              )) as TFile;
+              try {
+                const newFile = (await (stateManager.app.fileManager as any).createNewMarkdownFile(
+                  targetFolder,
+                  sanitizedTitle
+                )) as TFile;
 
-              const newLeaf = stateManager.app.workspace.splitActiveLeaf();
+                const newLeaf = stateManager.app.workspace.splitActiveLeaf();
 
-              await newLeaf.openFile(newFile);
+                await newLeaf.openFile(newFile);
 
-              stateManager.app.workspace.setActiveLeaf(newLeaf, false, true);
+                stateManager.app.workspace.setActiveLeaf(newLeaf, false, true);
 
-              await applyTemplate(stateManager, newNoteTemplatePath as string | undefined);
+                await applyTemplate(stateManager, newNoteTemplatePath as string | undefined);
 
-              const link = stateManager.app.fileManager.generateMarkdownLink(newFile, stateManager.file.path);
-              const newTitleRaw = item.data.titleRaw.replace(
-                prevTitle,
-                preservedParts ? `${link} ${preservedParts}` : link
-              );
+                const link = stateManager.app.fileManager.generateMarkdownLink(newFile, stateManager.file.path);
+                const newTitleRaw = item.data.titleRaw.replace(
+                  prevTitle,
+                  preservedParts ? `${link} ${preservedParts}` : link
+                );
 
-              boardModifiers.updateItem(path, stateManager.updateItemContent(item, newTitleRaw));
+                boardModifiers.updateItem(path, stateManager.updateItemContent(item, newTitleRaw));
+              } catch (e) {
+                new Notice(t('Failed to create note: ') + (e as Error).message);
+                console.error('Kanban: Failed to create note from card', e);
+              }
             });
         })
         .addItem((i) => {
