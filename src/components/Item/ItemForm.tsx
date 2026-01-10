@@ -20,13 +20,11 @@ export function ItemForm({ addItems, editState, setEditState, hideButton }: Item
   const { stateManager } = useContext(KanbanContext);
   const editorRef = useRef<EditorView>();
 
-  const clear = () => setEditState(EditingState.cancel);
-  const clickOutsideRef = useOnclickOutside(clear, {
-    ignoreClass: [c('ignore-click-outside'), 'mobile-toolbar', 'suggestion-container'],
-  });
-
   const createItem = (title: string) => {
-    addItems([stateManager.getNewItem(title, ' ')]);
+    const trimmed = title.trim();
+    if (trimmed) {
+      addItems([stateManager.getNewItem(trimmed, ' ')]);
+    }
     const cm = editorRef.current;
     if (cm) {
       cm.dispatch({
@@ -37,7 +35,27 @@ export function ItemForm({ addItems, editState, setEditState, hideButton }: Item
         },
       });
     }
+    setEditState(EditingState.cancel);
   };
+
+  // Save the card on click outside (if there's content) instead of discarding
+  const handleClickOutside = () => {
+    const cm = editorRef.current;
+    if (cm) {
+      const content = cm.state.doc.toString().trim();
+      if (content) {
+        createItem(content);
+        return;
+      }
+    }
+    setEditState(EditingState.cancel);
+  };
+
+  const clickOutsideRef = useOnclickOutside(handleClickOutside, {
+    ignoreClass: [c('ignore-click-outside'), 'mobile-toolbar', 'suggestion-container'],
+  });
+
+  const handleEscape = () => setEditState(EditingState.cancel);
 
   if (isEditing(editState)) {
     return (
@@ -57,7 +75,7 @@ export function ItemForm({ addItems, editState, setEditState, hideButton }: Item
             onSubmit={(cm) => {
               createItem(cm.state.doc.toString());
             }}
-            onEscape={clear}
+            onEscape={handleEscape}
           />
         </div>
       </div>

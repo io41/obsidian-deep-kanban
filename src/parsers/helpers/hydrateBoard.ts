@@ -93,6 +93,11 @@ export function preprocessTitle(stateManager: StateManager, title: string) {
     }
   );
 
+  // Escape --- at the start of lines to prevent horizontal rule rendering
+  // Use zero-width space (U+200B) to break the thematic break pattern
+  title = title.replace(/^---$/gm, '\u200B---');
+  title = title.replace(/^---(\s)/gm, '\u200B---$1');
+
   return title;
 }
 

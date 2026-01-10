@@ -53,7 +53,8 @@ const ItemInner = memo(function ItemInner({
 
   useEffect(() => {
     const handler = () => {
-      if (isEditing(editState)) setEditState(EditingState.cancel);
+      // Save edits (not cancel) when drag starts to prevent data loss
+      if (isEditing(editState)) setEditState(EditingState.complete);
     };
 
     dndManager.dragManager.emitter.on('dragStart', handler);

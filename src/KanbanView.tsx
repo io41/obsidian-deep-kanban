@@ -149,7 +149,12 @@ export class KanbanView extends TextFileView implements HoverParent {
   }
 
   async loadFile(file: TFile) {
-    this.plugin.removeView(this);
+    // Only remove the view if we're loading a different file
+    // This prevents the view from becoming blank when Quick Switcher
+    // or URI "re-opens" the same file that's already active
+    if (this.file?.path !== file.path) {
+      this.plugin.removeView(this);
+    }
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     return super.loadFile(file);
