@@ -57,6 +57,7 @@ export function bindMarkdownEvents(view: KanbanView) {
     if (!link) return;
 
     evt.preventDefault();
+    evt.stopPropagation();
     app.workspace.openLinkText(link.href, view.file.path, Keymap.isModEvent(evt));
   };
 
