@@ -4,6 +4,19 @@
 
 - **Total Open Bugs:** 202
 - **Generated:** 2026-01-10
+- **Last Updated:** 2026-01-10
+
+### Triage Progress
+
+| Status | Count |
+|--------|-------|
+| Fixed | 18 |
+| Verified | 28 |
+| Cannot Reproduce | 8 |
+| Won't Fix | 10 |
+| Needs Info | 3 |
+| Duplicate | 4 |
+| Unverified | 131 |
 
 ### By Operating System
 
@@ -60,13 +73,37 @@
 | [#703](bug-703.md) | Both New line trigger settings always create new line on iPad | Same fix as #579 |
 | [#1006](bug-1006.md) | Time trigger 23:01 interpreted as 2023-01-01 | Added strict mode to moment.js time parsing (`src/parsers/helpers/hydrateBoard.ts:79,107`) |
 
-### Bugs Marked Won't Fix (Theme Issues)
+### Commit: 92775ab (2026-01-10)
+
+| Issue | Title | Fix |
+|-------|-------|-----|
+| [#830](bug-830.md) | Copy link to card links to wrong card after duplicate | Clear blockId when duplicating items (`src/helpers/boardModifiers.ts:262-269`) |
+
+### Commit: f3090d1 (2026-01-10)
+
+| Issue | Title | Fix |
+|-------|-------|-----|
+| [#848](bug-848.md) | Card title badly formatted with Dataview fields | Also strip Dataview inline fields from filename, preserve after link (`src/components/Item/ItemMenu.ts`) |
+
+### Commit: 68069de (2026-01-10)
+
+| Issue | Title | Fix |
+|-------|-------|-----|
+| [#957](bug-957.md) | Tags breaking links in "New note from card" | Strip tags from filename, preserve after link (`src/components/Item/ItemMenu.ts`) |
+| [#984](bug-984.md) | Lane "mark complete" toggle not working | Added `shouldMarkAsComplete` to useCallback deps (`src/components/Lane/LaneForm.tsx`) |
+
+### Bugs Marked Won't Fix (Theme/Plugin Issues)
 
 | Issue | Title | Reason |
 |-------|-------|--------|
 | [#818](bug-818.md) | Add list button text is always white | Uses Obsidian CSS variables; theme-dependent |
 | [#673](bug-673.md) | Button text invisible | Uses Obsidian CSS variables; theme-dependent |
 | [#879](bug-879.md) | New card text contrast | Uses Obsidian CSS variables; theme-dependent |
+| [#793](bug-793.md) | Red Graphite theme black text | Theme doesn't define Kanban CSS variables properly |
+| [#822](bug-822.md) | Cards not linked to Calendar plugins | Cross-plugin integration; feature request |
+| [#965](bug-965.md) | Templater file rename not updating card | Cross-plugin compatibility |
+| [#979](bug-979.md) | Dataview JS scripts breaking | Cross-plugin compatibility |
+| [#985](bug-985.md), [#986](bug-986.md) | Tasks plugin UI issues | Cross-plugin compatibility |
 
 ### Bugs Verified (Complex, Needs More Work)
 
