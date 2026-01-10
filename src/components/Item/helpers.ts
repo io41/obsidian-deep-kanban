@@ -101,9 +101,9 @@ export function constructMenuDatePickerOnChange({
   const dateFormat = stateManager.getSetting('date-format');
   const shouldLinkDates = stateManager.getSetting('link-date-to-daily-note');
   const dateTrigger = stateManager.getSetting('date-trigger');
-  const contentMatch = shouldLinkDates
-    ? '(?:\\[[^\\]]+\\]\\([^)]+\\)|\\[\\[[^\\]]+\\]\\])'
-    : '{[^}]+}';
+  // Match ALL date formats (curly braces, wikilinks, markdown links) regardless of current setting
+  // This ensures dates can be updated even if the link-date-to-daily-note setting has changed
+  const contentMatch = '(?:{[^}]+}|\\[[^\\]]+\\]\\([^)]+\\)|\\[\\[[^\\]]+\\]\\])';
   const dateRegEx = new RegExp(`(^|\\s)${escapeRegExpStr(dateTrigger as string)}${contentMatch}`);
 
   return (dates: Date[]) => {

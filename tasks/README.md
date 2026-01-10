@@ -10,13 +10,13 @@
 
 | Status | Count |
 |--------|-------|
-| Fixed | 18 |
-| Verified | 28 |
-| Cannot Reproduce | 8 |
-| Won't Fix | 10 |
-| Needs Info | 3 |
-| Duplicate | 4 |
-| Unverified | 131 |
+| Fixed | 33 |
+| Verified | 83 |
+| Cannot Reproduce | 31 |
+| Won't Fix | 23 |
+| Needs Info | 17 |
+| Duplicate | 15 |
+| Unverified | 0 |
 
 ### By Operating System
 

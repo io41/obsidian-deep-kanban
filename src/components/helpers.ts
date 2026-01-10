@@ -119,11 +119,22 @@ export async function applyTemplate(stateManager: StateManager, templatePath?: s
     : null;
 
   if (templateFile && templateFile instanceof TFile) {
-    const activeView = app.workspace.getActiveViewOfType(MarkdownView);
+    const activeView = stateManager.app.workspace.getActiveViewOfType(MarkdownView);
+    const activeFile = stateManager.app.workspace.getActiveFile();
+
+    // Check if the file already has content (e.g., from Templater's auto-template feature)
+    // to prevent duplicate template application
+    if (activeFile) {
+      const existingContent = await stateManager.app.vault.read(activeFile);
+      if (existingContent.trim().length > 0) {
+        // File already has content, skip template application to avoid duplication
+        return;
+      }
+    }
 
     try {
       // Force the view to source mode, if needed
-      if (activeView?.getMode() !== 'source') {
+      if (activeView && activeView.getMode() !== 'source') {
         await activeView.setState(
           {
             ...activeView.getState(),
@@ -206,7 +217,7 @@ export function getTemplatePlugins(app: App) {
   const templaterEnabled = (app as any).plugins.enabledPlugins.has('templater-obsidian');
   const templaterEmptyFileTemplate =
     templaterPlugin &&
-    (this.app as any).plugins.plugins['templater-obsidian'].settings?.empty_file_template;
+    (app as any).plugins.plugins['templater-obsidian'].settings?.empty_file_template;
 
   const templateFolder = templatesEnabled
     ? templatesPlugin.instance.options.folder
