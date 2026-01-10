@@ -253,11 +253,20 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
     duplicateEntity: (path: Path) => {
       stateManager.setState((boardData) => {
         const entity = getEntityFromPath(boardData, path);
-        const entityWithNewID = update(entity, {
+        let entityWithNewID = update(entity, {
           id: {
             $set: generateInstanceId(),
           },
         });
+
+        // Clear blockId for duplicated items so they get unique link identifiers
+        if (entity.type === DataTypes.Item) {
+          entityWithNewID = update(entityWithNewID, {
+            data: {
+              blockId: { $set: undefined },
+            },
+          });
+        }
 
         if (entity.type === DataTypes.Lane) {
           const collapseState = view.getViewState('list-collapse');
