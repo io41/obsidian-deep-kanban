@@ -268,6 +268,7 @@ export class StateManager {
           ? this.getSettingRaw('date-colors', suppliedSettings)
           : this.getGlobalSetting('date-colors') ?? [],
       'tag-action': this.getSettingRaw('tag-action', suppliedSettings) ?? 'obsidian',
+      'max-archive-size': this.getSettingRaw('max-archive-size', suppliedSettings),
     };
   }
 

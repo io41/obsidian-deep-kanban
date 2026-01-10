@@ -40,6 +40,48 @@ export function applyCheckboxIndexes(dom: HTMLElement) {
 export function bindMarkdownEvents(view: KanbanView) {
   const { contentEl, app } = view;
 
+  // Track touch movement to prevent link activation during scroll
+  let touchStartPos: { x: number; y: number } | null = null;
+  let touchMoved = false;
+  const TOUCH_MOVE_THRESHOLD = 10; // pixels
+
+  contentEl.addEventListener(
+    'touchstart',
+    (evt: TouchEvent) => {
+      if (evt.touches.length === 1) {
+        touchStartPos = { x: evt.touches[0].clientX, y: evt.touches[0].clientY };
+        touchMoved = false;
+      }
+    },
+    { passive: true }
+  );
+
+  contentEl.addEventListener(
+    'touchmove',
+    (evt: TouchEvent) => {
+      if (touchStartPos && evt.touches.length === 1) {
+        const dx = Math.abs(evt.touches[0].clientX - touchStartPos.x);
+        const dy = Math.abs(evt.touches[0].clientY - touchStartPos.y);
+        if (dx > TOUCH_MOVE_THRESHOLD || dy > TOUCH_MOVE_THRESHOLD) {
+          touchMoved = true;
+        }
+      }
+    },
+    { passive: true }
+  );
+
+  contentEl.addEventListener(
+    'touchend',
+    () => {
+      // Reset after a short delay to allow click event to check touchMoved
+      setTimeout(() => {
+        touchStartPos = null;
+        touchMoved = false;
+      }, 100);
+    },
+    { passive: true }
+  );
+
   const parseLink = (el: HTMLElement) => {
     const href = el.getAttr('data-href') || el.getAttr('href');
     if (!href) return null;
@@ -52,6 +94,13 @@ export function bindMarkdownEvents(view: KanbanView) {
 
   const onLinkClick = (evt: MouseEvent, targetEl: HTMLElement) => {
     if (evt.button !== 0 && evt.button !== 1) return;
+
+    // Don't activate link if touch was a scroll gesture
+    if (touchMoved) {
+      evt.preventDefault();
+      evt.stopPropagation();
+      return;
+    }
 
     const link = parseLink(targetEl);
     if (!link) return;
@@ -88,6 +137,13 @@ export function bindMarkdownEvents(view: KanbanView) {
     });
   });
   contentEl.on('click', 'a.external-link', (evt: MouseEvent, targetEl: HTMLElement) => {
+    // Don't activate link if touch was a scroll gesture
+    if (touchMoved) {
+      evt.preventDefault();
+      evt.stopPropagation();
+      return;
+    }
+
     const link = parseLink(targetEl);
     if (!link) return;
 
