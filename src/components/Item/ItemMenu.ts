@@ -57,11 +57,17 @@ export function useItemMenu({
             .setTitle(t('New note from card'))
             .onClick(async () => {
               const prevTitle = item.data.titleRaw.split('\n')[0].trim();
+
+              // Extract tags to preserve them in the card after the link
+              const tagMatches = prevTitle.match(tagRegEx) || [];
+              const tagsString = tagMatches.join(' ');
+
+              // Remove tags completely from filename (don't include tag text)
               const sanitizedTitle = prevTitle
                 .replace(embedRegEx, '$1')
                 .replace(wikilinkRegEx, '$1')
                 .replace(mdLinkRegEx, '$1')
-                .replace(tagRegEx, '$1')
+                .replace(tagRegEx, '')
                 .replace(illegalCharsRegEx, ' ')
                 .trim()
                 .replace(condenceWhiteSpaceRE, ' ');
@@ -86,9 +92,10 @@ export function useItemMenu({
 
               await applyTemplate(stateManager, newNoteTemplatePath as string | undefined);
 
+              const link = stateManager.app.fileManager.generateMarkdownLink(newFile, stateManager.file.path);
               const newTitleRaw = item.data.titleRaw.replace(
                 prevTitle,
-                stateManager.app.fileManager.generateMarkdownLink(newFile, stateManager.file.path)
+                tagsString ? `${link} ${tagsString}` : link
               );
 
               boardModifiers.updateItem(path, stateManager.updateItemContent(item, newTitleRaw));
