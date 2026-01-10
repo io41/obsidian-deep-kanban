@@ -603,7 +603,9 @@ export async function handleDragOrPaste(
         : `[[${draggable.linktext}]]`;
       const alias = new DOMParser().parseFromString(transfer.getData('text/html'), 'text/html')
         .documentElement.textContent; // Get raw text
-      link = link.replace(/]]$/, `|${alias}]]`).replace(/^\[[^\]].+]\(/, `[${alias}](`);
+      if (alias) {
+        link = link.replace(/]]$/, `|${alias}]]`).replace(/^\[[^\]].+]\(/, `[${alias}](`);
+      }
       return [link];
     }
     default: {
