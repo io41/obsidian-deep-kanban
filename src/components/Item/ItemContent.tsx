@@ -9,6 +9,7 @@ import {
   useMemo,
   useRef,
 } from 'preact/hooks';
+import useOnclickOutside from 'react-cool-onclickoutside';
 import { StateManager } from 'src/StateManager';
 import { useNestedEntityPath } from 'src/dnd/components/Droppable';
 import { Path } from 'src/dnd/types';
@@ -236,6 +237,11 @@ export const ItemContent = memo(function ItemContent({
     return true;
   }, [item]);
 
+  // Save on click outside (similar to ItemForm, but save instead of cancel)
+  const clickOutsideRef = useOnclickOutside(onSubmit, {
+    ignoreClass: [c('ignore-click-outside'), 'mobile-toolbar', 'suggestion-container'],
+  });
+
   const onCheckboxContainerClick = useCallback(
     (e: PointerEvent) => {
       const target = e.target as HTMLElement;
@@ -257,7 +263,7 @@ export const ItemContent = memo(function ItemContent({
 
   if (!isStatic && isEditing(editState)) {
     return (
-      <div className={c('item-input-wrapper')}>
+      <div className={c('item-input-wrapper')} ref={clickOutsideRef}>
         <MarkdownEditor
           editState={editState}
           className={c('item-input')}
