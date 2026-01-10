@@ -78,12 +78,15 @@ export class DragManager {
   }
 
   dragStart(e: PointerEvent, referenceElement?: HTMLElement) {
-    const id =
-      referenceElement?.dataset.hitboxid || (e.currentTarget as HTMLElement).dataset.hitboxid;
+    const currentTarget = e.currentTarget as HTMLElement | null;
+    const id = referenceElement?.dataset?.hitboxid || currentTarget?.dataset?.hitboxid;
 
     if (!id) return;
 
-    const styles = getComputedStyle(referenceElement || (e.currentTarget as HTMLElement));
+    const element = referenceElement || currentTarget;
+    if (!element) return;
+
+    const styles = getComputedStyle(element);
 
     this.dragEntityId = id;
     this.dragOrigin = { x: e.pageX, y: e.pageY };
