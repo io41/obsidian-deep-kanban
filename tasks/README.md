@@ -74,6 +74,20 @@
 |-------|-------|-------|
 | [#1162](bug-1162.md) | Cannot drag to reorder list | Complex DnD timing issue with hitbox registration |
 | [#1112](bug-1112.md) | Arrow keys in list title changes tab | Obsidian workspace navigation conflict |
+| [#810](bug-810.md) | Calendar "today" doesn't update | Flatpickr caches 'now' at module load time |
+| [#889](bug-889.md) | Duplicate tags in cards | Complex rendering issue - tags in title and Tags component |
+
+### Bugs Marked as Duplicate
+
+| Issue | Title | Duplicate of |
+|-------|-------|--------------|
+| [#905](bug-905.md) | Tags showing twice | #889 |
+
+### Bugs Needing More Info
+
+| Issue | Title | Notes |
+|-------|-------|-------|
+| [#732](bug-732.md) | Can't switch back to kanban from markdown | Code appears correct, may need specific version to reproduce |
 
 ---
 
