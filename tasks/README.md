@@ -76,12 +76,36 @@
 | [#1112](bug-1112.md) | Arrow keys in list title changes tab | Obsidian workspace navigation conflict |
 | [#810](bug-810.md) | Calendar "today" doesn't update | Flatpickr caches 'now' at module load time |
 | [#889](bug-889.md) | Duplicate tags in cards | Complex rendering issue - tags in title and Tags component |
+| [#904](bug-904.md) | Date code showing alongside chip | Parser deletion not working correctly |
+| [#998](bug-998.md) | Enter won't close card (Windows) | Different from mobile issue, needs CodeMirror investigation |
+| [#996](bug-996.md) | Note folder setting not working | Settings precedence issue |
+
+### Commit: f2e93f2 (2026-01-10)
+
+| Issue | Title | Fix |
+|-------|-------|-----|
+| [#624](bug-624.md) | Dropped link creates invisible link | Only apply alias if non-empty (`src/components/Item/helpers.ts:606`) |
 
 ### Bugs Marked as Duplicate
 
 | Issue | Title | Duplicate of |
 |-------|-------|--------------|
 | [#905](bug-905.md) | Tags showing twice | #889 |
+| [#808](bug-808.md) | Date code appearing | #904 |
+| [#871](bug-871.md) | Time code still appearing | #904 |
+
+### Bugs Marked Won't Fix
+
+| Issue | Title | Reason |
+|-------|-------|--------|
+| [#720](bug-720.md) | Lane title (n) shows as card count | Working as designed - WIP limit syntax |
+
+### Cannot Reproduce
+
+| Issue | Title | Notes |
+|-------|-------|-------|
+| [#682](bug-682.md) | Failed to enable plugin | Old Obsidian 1.0.3 issue |
+| [#735](bug-735.md) | Settings dialog freezes | Old issue, likely fixed |
 
 ### Bugs Needing More Info
 
