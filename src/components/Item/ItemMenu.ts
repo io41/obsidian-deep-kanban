@@ -21,6 +21,7 @@ const illegalCharsRegEx = /[\\/:"*?<>|]+/g;
 const embedRegEx = /!?\[\[([^\]]*)\.[^\]]+\]\]/g;
 const wikilinkRegEx = /!?\[\[([^\]]*)\]\]/g;
 const mdLinkRegEx = /!?\[([^\]]*)\]\([^)]*\)/g;
+const externalMdLinkRegEx = /\[[^\]]*\]\(https?:\/\/[^)]+\)/g;
 const tagRegEx = /#([^\u2000-\u206F\u2E00-\u2E7F'!"#$%&()*+,.:;<=>?@^`{|}~[\]\\\s\n\r]+)/g;
 const dataviewInlineRegEx = /\[([^\]]+)::\s*[^\]]*\]/g;
 const kanbanDateRegEx = /@@?\{[^}]+\}/g;
@@ -60,17 +61,19 @@ export function useItemMenu({
             .onClick(async () => {
               const prevTitle = item.data.titleRaw.split('\n')[0].trim();
 
-              // Extract tags, Dataview fields, and Kanban dates to preserve them in the card after the link
+              // Extract tags, Dataview fields, Kanban dates, and external links to preserve after the note link
               const tagMatches = prevTitle.match(tagRegEx) || [];
               const dataviewMatches = prevTitle.match(dataviewInlineRegEx) || [];
               const dateMatches = prevTitle.match(kanbanDateRegEx) || [];
-              const preservedParts = [...tagMatches, ...dataviewMatches, ...dateMatches].join(' ');
+              const externalLinkMatches = prevTitle.match(externalMdLinkRegEx) || [];
+              const preservedParts = [...tagMatches, ...dataviewMatches, ...dateMatches, ...externalLinkMatches].join(' ');
 
-              // Remove tags, Dataview fields, and Kanban dates completely from filename
+              // Remove tags, Dataview fields, Kanban dates, and external links from filename
               let sanitizedTitle = prevTitle
                 .replace(embedRegEx, '$1')
                 .replace(wikilinkRegEx, '$1')
-                .replace(mdLinkRegEx, '$1')
+                .replace(externalMdLinkRegEx, '') // Remove external links entirely (preserved above)
+                .replace(mdLinkRegEx, '$1') // Keep text from other markdown links
                 .replace(tagRegEx, '')
                 .replace(dataviewInlineRegEx, '')
                 .replace(kanbanDateRegEx, '')
