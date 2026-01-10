@@ -22,6 +22,7 @@ const embedRegEx = /!?\[\[([^\]]*)\.[^\]]+\]\]/g;
 const wikilinkRegEx = /!?\[\[([^\]]*)\]\]/g;
 const mdLinkRegEx = /!?\[([^\]]*)\]\([^)]*\)/g;
 const tagRegEx = /#([^\u2000-\u206F\u2E00-\u2E7F'!"#$%&()*+,.:;<=>?@^`{|}~[\]\\\s\n\r]+)/g;
+const dataviewInlineRegEx = /\[([^\]]+)::\s*[^\]]*\]/g;
 const condenceWhiteSpaceRE = /\s+/g;
 
 interface UseItemMenuParams {
@@ -58,16 +59,18 @@ export function useItemMenu({
             .onClick(async () => {
               const prevTitle = item.data.titleRaw.split('\n')[0].trim();
 
-              // Extract tags to preserve them in the card after the link
+              // Extract tags and Dataview inline fields to preserve them in the card after the link
               const tagMatches = prevTitle.match(tagRegEx) || [];
-              const tagsString = tagMatches.join(' ');
+              const dataviewMatches = prevTitle.match(dataviewInlineRegEx) || [];
+              const preservedParts = [...tagMatches, ...dataviewMatches].join(' ');
 
-              // Remove tags completely from filename (don't include tag text)
+              // Remove tags and Dataview fields completely from filename
               const sanitizedTitle = prevTitle
                 .replace(embedRegEx, '$1')
                 .replace(wikilinkRegEx, '$1')
                 .replace(mdLinkRegEx, '$1')
                 .replace(tagRegEx, '')
+                .replace(dataviewInlineRegEx, '')
                 .replace(illegalCharsRegEx, ' ')
                 .trim()
                 .replace(condenceWhiteSpaceRE, ' ');
@@ -95,7 +98,7 @@ export function useItemMenu({
               const link = stateManager.app.fileManager.generateMarkdownLink(newFile, stateManager.file.path);
               const newTitleRaw = item.data.titleRaw.replace(
                 prevTitle,
-                tagsString ? `${link} ${tagsString}` : link
+                preservedParts ? `${link} ${preservedParts}` : link
               );
 
               boardModifiers.updateItem(path, stateManager.updateItemContent(item, newTitleRaw));
