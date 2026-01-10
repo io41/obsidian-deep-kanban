@@ -76,7 +76,7 @@ export function preprocessTitle(stateManager: StateManager, title: string) {
   title = title.replace(
     new RegExp(`(^|\\s)${escapeRegExpStr(timeTrigger)}{([^}]+)}`, 'g'),
     (match, space, content) => {
-      const parsed = moment(content, timeFormat);
+      const parsed = moment(content, timeFormat, true);
       if (!parsed.isValid()) return match;
 
       if (!date) {
@@ -104,7 +104,7 @@ export function hydrateItem(stateManager: StateManager, item: Item) {
   }
 
   if (timeStr) {
-    let time = moment(timeStr, stateManager.getSetting('time-format'));
+    let time = moment(timeStr, stateManager.getSetting('time-format'), true);
 
     if (item.data.metadata.date) {
       const date = item.data.metadata.date;

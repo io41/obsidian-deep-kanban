@@ -28,7 +28,6 @@ interface MarkdownEditorProps {
 }
 
 export function allowNewLine(stateManager: StateManager, mod: boolean, shift: boolean) {
-  if (Platform.isMobile) return !(mod || shift);
   return stateManager.getSetting('new-line-trigger') === 'enter' ? !(mod || shift) : mod || shift;
 }
 
@@ -274,7 +273,7 @@ export function MarkdownEditor({
       <div className={classcat(cls)} ref={elRef}></div>
       {Platform.isMobile && (
         <button
-          onClick={() => onSubmit(internalRef.current)}
+          onPointerUp={() => onSubmit(internalRef.current)}
           className={classcat([c('item-submit-button'), 'mod-cta'])}
         >
           {t('Submit')}
