@@ -30,6 +30,36 @@
 - `needs_info` - Requires more information from reporter
 - `duplicate` - Duplicate of another issue
 
+## Fixes Applied
+
+### Commit: 08a44bf (2026-01-10)
+
+| Issue | Title | Fix |
+|-------|-------|-----|
+| [#1160](bug-1160.md) | Dropping link on board causes the link to be opened | Added `e.preventDefault()` in `onDrop` handler (`src/dnd/managers/DragManager.ts:498`) |
+| [#1055](bug-1055.md) | Non-passive touchstart listener warning | Added `{ passive: true }` to touchstart listener (`src/dnd/managers/DragManager.ts:469`) |
+| [#1075](bug-1075.md) | Broken roadmap link in README | Removed broken link from `README.md` |
+| [#705](bug-705.md) | Checkboxes cropped in cards | Changed `overflow: hidden` to `overflow: visible` on `.kanban-plugin__item` (`src/styles.less:691`) |
+| [#714](bug-714.md) | Subbullet checkboxes cut off | Same fix as #705 |
+| [#730](bug-730.md) | Checkboxes are cut off | Same fix as #705 |
+
+### Bugs Marked Won't Fix (Theme Issues)
+
+| Issue | Title | Reason |
+|-------|-------|--------|
+| [#818](bug-818.md) | Add list button text is always white | Uses Obsidian CSS variables; theme-dependent |
+| [#673](bug-673.md) | Button text invisible | Uses Obsidian CSS variables; theme-dependent |
+| [#879](bug-879.md) | New card text contrast | Uses Obsidian CSS variables; theme-dependent |
+
+### Bugs Verified (Complex, Needs More Work)
+
+| Issue | Title | Notes |
+|-------|-------|-------|
+| [#1162](bug-1162.md) | Cannot drag to reorder list | Complex DnD timing issue with hitbox registration |
+| [#1112](bug-1112.md) | Arrow keys in list title changes tab | Obsidian workspace navigation conflict |
+
+---
+
 ## Bug Index
 
 | Issue | Title | OS | Created |
