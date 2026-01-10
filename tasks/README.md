@@ -50,11 +50,15 @@
 | [#1110](bug-1110.md) | Scroll speed too fast | Reduced `scrollStrengthModifier` from 8 to 5 (`src/dnd/managers/ScrollManager.ts:26`) |
 | [#596](bug-596.md) | Middle click opens two panes | Added `stopPropagation()` to onLinkClick handler (`src/helpers/renderMarkdown.ts:60`) |
 
-### Bugs Verified (Investigation Complete)
+### Commit: fc50e41 (2026-01-10)
 
-| Issue | Title | Notes |
-|-------|-------|-------|
-| [#1006](bug-1006.md) | Time trigger not recognized (23:01 → 2023-01-01) | moment.js parsing issue - needs format specification fix |
+| Issue | Title | Fix |
+|-------|-------|-----|
+| [#700](bug-700.md) | Cannot submit card with trackpad on iPad | Changed Submit button from `onClick` to `onPointerUp` (`src/components/Editor/MarkdownEditor.tsx:277`) |
+| [#766](bug-766.md) | Submit button not working with mouse/trackpad on iPad | Same fix as #700 |
+| [#579](bug-579.md) | Enter doesn't create new card on iPad | Removed Platform.isMobile override in `allowNewLine()` (`src/components/Editor/MarkdownEditor.tsx:30`) |
+| [#703](bug-703.md) | Both New line trigger settings always create new line on iPad | Same fix as #579 |
+| [#1006](bug-1006.md) | Time trigger 23:01 interpreted as 2023-01-01 | Added strict mode to moment.js time parsing (`src/parsers/helpers/hydrateBoard.ts:79,107`) |
 
 ### Bugs Marked Won't Fix (Theme Issues)
 
