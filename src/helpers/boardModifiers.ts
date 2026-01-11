@@ -16,6 +16,7 @@ import {
 
 import { generateInstanceId } from '../components/helpers';
 import { Board, DataTypes, Item, Lane } from '../components/types';
+import { triggerCardEvent, triggerLaneEvent } from './kanbanEvents';
 
 export interface BoardModifiers {
   appendItems: (path: Path, items: Item[]) => void;
@@ -57,14 +58,24 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
   return {
     appendItems: (path: Path, items: Item[]) => {
       stateManager.setState((boardData) => appendEntities(boardData, path, items));
+      const lane = getEntityFromPath(stateManager.state, path);
+      items.forEach((item, i) => {
+        triggerCardEvent(stateManager.app, 'kanban:card-added', item, [...path, lane.children.length - items.length + i], stateManager.file.path);
+      });
     },
 
     prependItems: (path: Path, items: Item[]) => {
       stateManager.setState((boardData) => prependEntities(boardData, path, items));
+      items.forEach((item, i) => {
+        triggerCardEvent(stateManager.app, 'kanban:card-added', item, [...path, i], stateManager.file.path);
+      });
     },
 
     insertItems: (path: Path, items: Item[]) => {
       stateManager.setState((boardData) => insertEntity(boardData, path, items));
+      items.forEach((item, i) => {
+        triggerCardEvent(stateManager.app, 'kanban:card-added', item, [...path.slice(0, -1), path[path.length - 1] + i], stateManager.file.path);
+      });
     },
 
     replaceItem: (path: Path, items: Item[]) => {
@@ -80,15 +91,22 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
     },
 
     moveItemToTop: (path: Path) => {
-      stateManager.setState((boardData) => moveEntity(boardData, path, [path[0], 0]));
+      const item = getEntityFromPath(stateManager.state, path) as Item;
+      const newPath: Path = [path[0], 0];
+      stateManager.setState((boardData) => moveEntity(boardData, path, newPath));
+      triggerCardEvent(stateManager.app, 'kanban:card-moved', item, newPath, stateManager.file.path, path);
     },
 
     moveItemToBottom: (path: Path) => {
+      const item = getEntityFromPath(stateManager.state, path) as Item;
       stateManager.setState((boardData) => {
         const laneIndex = path[0];
         const lane = boardData.children[laneIndex];
         return moveEntity(boardData, path, [laneIndex, lane.children.length]);
       });
+      const lane = stateManager.state.children[path[0]];
+      const newPath: Path = [path[0], lane.children.length - 1];
+      triggerCardEvent(stateManager.app, 'kanban:card-moved', item, newPath, stateManager.file.path, path);
     },
 
     addLane: (lane: Lane) => {
@@ -105,6 +123,8 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
           data: { settings: { 'list-collapse': { $set: op(collapseState) } } },
         });
       });
+      const newPath: Path = [stateManager.state.children.length - 1];
+      triggerLaneEvent(stateManager.app, 'kanban:lane-added', lane, newPath, stateManager.file.path);
     },
 
     insertLane: (path: Path, lane: Lane) => {
@@ -122,6 +142,7 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
           data: { settings: { 'list-collapse': { $set: op(collapseState) } } },
         });
       });
+      triggerLaneEvent(stateManager.app, 'kanban:lane-added', lane, path, stateManager.file.path);
     },
 
     updateLane: (path: Path, lane: Lane) => {
@@ -134,12 +155,14 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
           },
         })
       );
+      triggerLaneEvent(stateManager.app, 'kanban:lane-updated', lane, path, stateManager.file.path);
     },
 
     archiveLane: (path: Path) => {
+      const lane = getEntityFromPath(stateManager.state, path) as Lane;
       stateManager.setState((boardData) => {
-        const lane = getEntityFromPath(boardData, path);
-        const items = lane.children;
+        const laneData = getEntityFromPath(boardData, path);
+        const items = laneData.children;
 
         try {
           const collapseState = view.getViewState('list-collapse');
@@ -165,6 +188,7 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
           return boardData;
         }
       });
+      triggerLaneEvent(stateManager.app, 'kanban:lane-archived', lane, path, stateManager.file.path);
     },
 
     archiveLaneItems: (path: Path) => {
@@ -197,10 +221,11 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
     },
 
     deleteEntity: (path: Path) => {
+      const entity = getEntityFromPath(stateManager.state, path);
       stateManager.setState((boardData) => {
-        const entity = getEntityFromPath(boardData, path);
+        const entityData = getEntityFromPath(boardData, path);
 
-        if (entity.type === DataTypes.Lane) {
+        if (entityData.type === DataTypes.Lane) {
           const collapseState = view.getViewState('list-collapse');
           const op = (collapseState: boolean[]) => {
             const newState = [...collapseState];
@@ -216,6 +241,11 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
 
         return removeEntity(boardData, path);
       });
+      if (entity.type === DataTypes.Lane) {
+        triggerLaneEvent(stateManager.app, 'kanban:lane-deleted', entity as Lane, path, stateManager.file.path);
+      } else if (entity.type === DataTypes.Item) {
+        triggerCardEvent(stateManager.app, 'kanban:card-deleted', entity as Item, path, stateManager.file.path);
+      }
     },
 
     updateItem: (path: Path, item: Item) => {
@@ -228,17 +258,19 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
           },
         });
       });
+      triggerCardEvent(stateManager.app, 'kanban:card-updated', item, path, stateManager.file.path);
     },
 
     archiveItem: (path: Path) => {
+      const item = getEntityFromPath(stateManager.state, path) as Item;
       stateManager.setState((boardData) => {
-        const item = getEntityFromPath(boardData, path);
+        const itemData = getEntityFromPath(boardData, path);
         try {
           return update(removeEntity(boardData, path), {
             data: {
               archive: {
                 $push: [
-                  stateManager.getSetting('archive-with-date') ? appendArchiveDate(item) : item,
+                  stateManager.getSetting('archive-with-date') ? appendArchiveDate(itemData) : itemData,
                 ],
               },
             },
@@ -248,6 +280,7 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
           return boardData;
         }
       });
+      triggerCardEvent(stateManager.app, 'kanban:card-archived', item, path, stateManager.file.path);
     },
 
     duplicateEntity: (path: Path) => {

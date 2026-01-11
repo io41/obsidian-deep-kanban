@@ -24,6 +24,7 @@ export function preprocessTitle(stateManager: StateManager, title: string) {
 
   let date: moment.Moment;
   let dateColor: DateColor;
+  let dateIndex = 0; // Track which date occurrence we're on
   const getWrapperStyles = (baseClass: string) => {
     let wrapperStyle = '';
     if (dateColor) {
@@ -46,7 +47,8 @@ export function preprocessTitle(stateManager: StateManager, title: string) {
       const linkPath = app.metadataCache.getFirstLinkpathDest(content, stateManager.file.path);
       if (!dateColor) dateColor = getDateColor(parsed);
       const { wrapperClass, wrapperStyle } = getWrapperStyles(c('preview-date-wrapper'));
-      return `${space}<span data-date="${date.toISOString()}" class="${wrapperClass} ${c('date')} ${c('preview-date-link')}"${wrapperStyle}><a class="${c('preview-date')} internal-link" data-href="${linkPath?.path ?? content}" href="${linkPath?.path ?? content}" target="_blank" rel="noopener">${parsed.format(dateDisplayFormat)}</a></span>`;
+      const currentIndex = dateIndex++;
+      return `${space}<span data-date="${date.toISOString()}" data-date-index="${currentIndex}" class="${wrapperClass} ${c('date')} ${c('preview-date-link')}"${wrapperStyle}><a class="${c('preview-date')} internal-link" data-href="${linkPath?.path ?? content}" href="${linkPath?.path ?? content}" target="_blank" rel="noopener">${parsed.format(dateDisplayFormat)}</a></span>`;
     }
   );
   title = title.replace(
@@ -58,7 +60,8 @@ export function preprocessTitle(stateManager: StateManager, title: string) {
       const linkPath = app.metadataCache.getFirstLinkpathDest(content, stateManager.file.path);
       if (!dateColor) dateColor = getDateColor(parsed);
       const { wrapperClass, wrapperStyle } = getWrapperStyles(c('preview-date-wrapper'));
-      return `${space}<span data-date="${date.toISOString()}" class="${wrapperClass} ${c('date')} ${c('preview-date-link')}"${wrapperStyle}><a class="${c('preview-date')} internal-link" data-href="${linkPath?.path ?? content}" href="${linkPath?.path ?? content}" target="_blank" rel="noopener">${parsed.format(dateDisplayFormat)}</a></span>`;
+      const currentIndex = dateIndex++;
+      return `${space}<span data-date="${date.toISOString()}" data-date-index="${currentIndex}" class="${wrapperClass} ${c('date')} ${c('preview-date-link')}"${wrapperStyle}><a class="${c('preview-date')} internal-link" data-href="${linkPath?.path ?? content}" href="${linkPath?.path ?? content}" target="_blank" rel="noopener">${parsed.format(dateDisplayFormat)}</a></span>`;
     }
   );
   title = title.replace(
@@ -69,7 +72,8 @@ export function preprocessTitle(stateManager: StateManager, title: string) {
       date = parsed;
       if (!dateColor) dateColor = getDateColor(parsed);
       const { wrapperClass, wrapperStyle } = getWrapperStyles(c('preview-date-wrapper'));
-      return `${space}<span data-date="${date.toISOString()}" class="${wrapperClass} ${c('date')}"${wrapperStyle}><span class="${c('preview-date')} ${c('item-metadata-date')}">${parsed.format(dateDisplayFormat)}</span></span>`;
+      const currentIndex = dateIndex++;
+      return `${space}<span data-date="${date.toISOString()}" data-date-index="${currentIndex}" class="${wrapperClass} ${c('date')}"${wrapperStyle}><span class="${c('preview-date')} ${c('item-metadata-date')}">${parsed.format(dateDisplayFormat)}</span></span>`;
     }
   );
 

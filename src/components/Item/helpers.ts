@@ -89,6 +89,7 @@ interface ConstructMenuDatePickerOnChangeParams {
   item: Item;
   hasDate: boolean;
   path: Path;
+  dateIndex?: number;
 }
 
 export function constructMenuDatePickerOnChange({
@@ -97,6 +98,7 @@ export function constructMenuDatePickerOnChange({
   item,
   hasDate,
   path,
+  dateIndex,
 }: ConstructMenuDatePickerOnChangeParams) {
   const dateFormat = stateManager.getSetting('date-format');
   const shouldLinkDates = stateManager.getSetting('link-date-to-daily-note');
@@ -104,7 +106,7 @@ export function constructMenuDatePickerOnChange({
   // Match ALL date formats (curly braces, wikilinks, markdown links) regardless of current setting
   // This ensures dates can be updated even if the link-date-to-daily-note setting has changed
   const contentMatch = '(?:{[^}]+}|\\[[^\\]]+\\]\\([^)]+\\)|\\[\\[[^\\]]+\\]\\])';
-  const dateRegEx = new RegExp(`(^|\\s)${escapeRegExpStr(dateTrigger as string)}${contentMatch}`);
+  const dateRegEx = new RegExp(`(^|\\s)${escapeRegExpStr(dateTrigger as string)}${contentMatch}`, 'g');
 
   return (dates: Date[]) => {
     const date = dates[0];
@@ -116,7 +118,21 @@ export function constructMenuDatePickerOnChange({
     let titleRaw = item.data.titleRaw;
 
     if (hasDate) {
-      titleRaw = item.data.titleRaw.replace(dateRegEx, `$1${dateTrigger}${wrappedDate}`);
+      // If we have a specific date index, replace only that occurrence
+      if (typeof dateIndex === 'number') {
+        let matchCount = 0;
+        titleRaw = item.data.titleRaw.replace(dateRegEx, (match, space) => {
+          if (matchCount === dateIndex) {
+            matchCount++;
+            return `${space}${dateTrigger}${wrappedDate}`;
+          }
+          matchCount++;
+          return match;
+        });
+      } else {
+        // No index specified, replace first occurrence (legacy behavior)
+        titleRaw = item.data.titleRaw.replace(dateRegEx, `$1${dateTrigger}${wrappedDate}`);
+      }
     } else {
       titleRaw = `${item.data.titleRaw} ${dateTrigger}${wrappedDate}`;
     }

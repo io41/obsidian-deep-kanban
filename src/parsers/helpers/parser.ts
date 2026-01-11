@@ -28,7 +28,24 @@ export function replaceNewLines(str: string) {
 }
 
 export function replaceBrs(str: string) {
-  return str.replace(/<br>/g, '\n').trim();
+  // Split by lines to preserve <br> inside table cells
+  const lines = str.split('\n');
+  const result: string[] = [];
+
+  for (const line of lines) {
+    // Check if line looks like a table row (contains | character not at line start/end only)
+    const isTableRow = /\|.*\|/.test(line.trim()) || line.trim().startsWith('|');
+
+    if (isTableRow) {
+      // Preserve <br> in table cells - don't convert them
+      result.push(line);
+    } else {
+      // For non-table content, convert <br> to newlines
+      result.push(line.replace(/<br>/g, '\n'));
+    }
+  }
+
+  return result.join('\n').trim();
 }
 
 export function indentNewLines(str: string) {

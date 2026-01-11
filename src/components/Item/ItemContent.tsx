@@ -38,7 +38,7 @@ export function useDatePickers(item: Item, explicitPath?: Path) {
   const path = explicitPath || useNestedEntityPath();
 
   return useMemo(() => {
-    const onEditDate = (e: MouseEvent) => {
+    const onEditDate = (e: MouseEvent, dateIndex?: number) => {
       constructDatePicker(
         e.view,
         stateManager,
@@ -49,6 +49,7 @@ export function useDatePickers(item: Item, explicitPath?: Path) {
           item,
           hasDate: true,
           path,
+          dateIndex,
         }),
         item.data.metadata.date?.toDate()
       );
@@ -221,7 +222,10 @@ export const ItemContent = memo(function ItemContent({
     (e: MouseEvent) => {
       if (e.targetNode.instanceOf(HTMLElement)) {
         if (e.targetNode.hasClass(c('item-metadata-date'))) {
-          onEditDate(e);
+          // Get date index from parent span with data-date-index attribute
+          const dateWrapper = e.targetNode.closest('[data-date-index]') as HTMLElement;
+          const dateIndex = dateWrapper ? parseInt(dateWrapper.dataset.dateIndex, 10) : undefined;
+          onEditDate(e, dateIndex);
         } else if (e.targetNode.hasClass(c('item-metadata-time'))) {
           onEditTime(e);
         }

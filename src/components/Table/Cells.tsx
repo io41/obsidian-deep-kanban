@@ -3,7 +3,9 @@ import { Menu } from 'obsidian';
 import { JSX, memo, useCallback, useContext, useState } from 'preact/compat';
 import isEqual from 'react-fast-compare';
 import { ExplicitPathContext } from 'src/dnd/components/context';
-import { moveEntity } from 'src/dnd/util/data';
+import { Path } from 'src/dnd/types';
+import { getEntityFromPath, moveEntity } from 'src/dnd/util/data';
+import { triggerCardEvent } from 'src/helpers/kanbanEvents';
 
 import { Icon } from '../Icon/Icon';
 import { DateAndTime, RelativeDate } from '../Item/DateAndTime';
@@ -133,16 +135,27 @@ export const LaneCell = memo(function LaneCell({ lane, path }: { lane: Lane; pat
 
           for (let i = 0, len = lanes.length; i < len; i++) {
             const l = lanes[i];
-            menu.addItem((item) =>
-              item
+            menu.addItem((menuItem) =>
+              menuItem
                 .setChecked(lane === l)
                 .setTitle(l.data.title)
                 .onClick(() => {
                   if (lane === l) return;
+                  const cardBeforeMove = getEntityFromPath(stateManager.state, path) as Item;
+                  const targetLane = stateManager.state.children[i];
+                  const newPath: Path = [i, targetLane.children.length];
                   stateManager.setState((boardData) => {
                     const target = boardData.children[i];
                     return moveEntity(boardData, path, [i, target.children.length]);
                   });
+                  triggerCardEvent(
+                    stateManager.app,
+                    'kanban:card-moved',
+                    cardBeforeMove,
+                    newPath,
+                    stateManager.file.path,
+                    path
+                  );
                 })
             );
           }

@@ -3,7 +3,8 @@ import { Menu, Notice, Platform, TFile, TFolder } from 'obsidian';
 import { Dispatch, StateUpdater, useCallback } from 'preact/hooks';
 import { StateManager } from 'src/StateManager';
 import { Path } from 'src/dnd/types';
-import { moveEntity } from 'src/dnd/util/data';
+import { getEntityFromPath, moveEntity } from 'src/dnd/util/data';
+import { triggerCardEvent } from 'src/helpers/kanbanEvents';
 import { t } from 'src/lang/helpers';
 import { createSubBoard } from 'src/helpers/subBoardHelpers';
 
@@ -319,16 +320,26 @@ export function useItemMenu({
         const lanes = stateManager.state.children;
         if (lanes.length <= 1) return;
         for (let i = 0, len = lanes.length; i < len; i++) {
-          menu.addItem((item) =>
-            item
+          menu.addItem((menuItem) =>
+            menuItem
               .setIcon('lucide-square-kanban')
               .setChecked(path[0] === i)
               .setTitle(lanes[i].data.title)
               .onClick(() => {
                 if (path[0] === i) return;
+                const cardBeforeMove = getEntityFromPath(stateManager.state, path) as Item;
+                const newPath: Path = [i, 0];
                 stateManager.setState((boardData) => {
-                  return moveEntity(boardData, path, [i, 0]);
+                  return moveEntity(boardData, path, newPath);
                 });
+                triggerCardEvent(
+                  stateManager.app,
+                  'kanban:card-moved',
+                  cardBeforeMove,
+                  newPath,
+                  stateManager.file.path,
+                  path
+                );
               })
           );
         }

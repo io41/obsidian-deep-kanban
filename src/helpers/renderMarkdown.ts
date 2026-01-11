@@ -1,4 +1,11 @@
-import { Keymap, Menu } from 'obsidian';
+import { Keymap, Menu, moment } from 'obsidian';
+import {
+  appHasDailyNotesPluginLoaded,
+  createDailyNote,
+  getAllDailyNotes,
+  getDailyNote,
+  getDailyNoteSettings,
+} from 'obsidian-daily-notes-interface';
 import { KanbanView } from 'src/KanbanView';
 
 const noBreakSpace = /\u00A0/g;
@@ -27,6 +34,62 @@ export function getNormalizedPath(path: string): NormalizedPath {
     subpath: splitOnHash[1] ? '#' + splitOnHash[1] : '',
     alias: splitOnAlias[1] || '',
   };
+}
+
+/**
+ * Try to open a link as a daily note. If the link matches the daily note format
+ * and the file doesn't exist, create it using the Daily Notes plugin settings.
+ * Returns true if handled, false if should use default link handling.
+ */
+async function tryOpenAsDailyNote(
+  view: KanbanView,
+  href: string,
+  isNewPane: boolean | string
+): Promise<boolean> {
+  // Check if Daily Notes plugin is loaded
+  if (!appHasDailyNotesPluginLoaded()) {
+    return false;
+  }
+
+  const settings = getDailyNoteSettings();
+  const format = settings.format || 'YYYY-MM-DD';
+
+  // Extract just the filename without path or extension
+  const normalizedPath = getNormalizedPath(href);
+  const filename = normalizedPath.root.split('/').pop()?.replace(/\.md$/, '') || '';
+
+  // Try to parse as a date
+  const parsedDate = moment(filename, format, true);
+  if (!parsedDate.isValid()) {
+    return false;
+  }
+
+  // Check if the file already exists
+  const existingFile = view.app.metadataCache.getFirstLinkpathDest(href, view.file.path);
+  if (existingFile) {
+    // File exists, use default handling
+    return false;
+  }
+
+  // Check if we have an existing daily note for this date
+  const allDailyNotes = getAllDailyNotes();
+  const existingDailyNote = getDailyNote(parsedDate, allDailyNotes);
+
+  if (existingDailyNote) {
+    // Open the existing daily note
+    await view.app.workspace.openLinkText(existingDailyNote.path, view.file.path, isNewPane);
+    return true;
+  }
+
+  // Create the daily note using the plugin's settings (respects folder, template)
+  try {
+    const newFile = await createDailyNote(parsedDate);
+    await view.app.workspace.openLinkText(newFile.path, view.file.path, isNewPane);
+    return true;
+  } catch (e) {
+    console.error('Failed to create daily note:', e);
+    return false;
+  }
 }
 
 export function applyCheckboxIndexes(dom: HTMLElement) {
@@ -92,7 +155,7 @@ export function bindMarkdownEvents(view: KanbanView) {
     };
   };
 
-  const onLinkClick = (evt: MouseEvent, targetEl: HTMLElement) => {
+  const onLinkClick = async (evt: MouseEvent, targetEl: HTMLElement) => {
     if (evt.button !== 0 && evt.button !== 1) return;
 
     // Don't activate link if touch was a scroll gesture
@@ -107,7 +170,17 @@ export function bindMarkdownEvents(view: KanbanView) {
 
     evt.preventDefault();
     evt.stopPropagation();
-    app.workspace.openLinkText(link.href, view.file.path, Keymap.isModEvent(evt));
+
+    const isNewPane = Keymap.isModEvent(evt);
+
+    // Try to handle as a daily note first (respects Daily Notes plugin settings)
+    const handledAsDailyNote = await tryOpenAsDailyNote(view, link.href, isNewPane);
+    if (handledAsDailyNote) {
+      return;
+    }
+
+    // Fall back to default link handling
+    app.workspace.openLinkText(link.href, view.file.path, isNewPane);
   };
 
   contentEl.on('click', 'a.internal-link', onLinkClick);
