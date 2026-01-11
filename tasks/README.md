@@ -10,8 +10,8 @@
 
 | Status | Count |
 |--------|-------|
-| Fixed | 41 |
-| Verified | 76 |
+| Fixed | 43 |
+| Verified | 74 |
 | Cannot Reproduce | 30 |
 | Won't Fix | 23 |
 | Needs Info | 17 |
@@ -44,6 +44,22 @@
 - `duplicate` - Duplicate of another issue
 
 ## Fixes Applied
+
+### Commit: 047825f (2026-01-10)
+
+| Issue | Title | Fix |
+|-------|-------|-----|
+| [#1036](bug-1036.md) | Relative date text doesn't update | Added 1-minute refresh interval to `RelativeDate` component (`src/components/Item/DateAndTime.tsx`) |
+| [#1051](bug-1051.md) | Cross-board drag scroll affects all boards | Filter scroll entities by `scopeId` in `DragManager.calculateDragIntersect()` |
+
+### Commit: deea7b3 (2026-01-10)
+
+| Issue | Title | Fix |
+|-------|-------|-----|
+| [#1004](bug-1004.md) | kanban:card-moved events no longer fire | Created `kanbanEvents.ts` helper and added event triggers throughout board modifiers |
+| [#1066](bug-1066.md) | Daily Notes Settings not respected | Integrated `obsidian-daily-notes-interface` to use Daily Notes plugin settings when creating notes |
+| [#1024](bug-1024.md) | Table `<br>` tags disappear | Made `replaceBrs()` table-aware to preserve `<br>` in table cells |
+| [#1000](bug-1000.md) | Multiple dates only edits first | Added `data-date-index` attribute tracking for multiple inline dates |
 
 ### Commit: 08a44bf (2026-01-10)
 
