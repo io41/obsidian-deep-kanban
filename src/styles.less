@@ -323,6 +323,8 @@ button.kanban-plugin__search-cancel-button .kanban-plugin__icon {
   background-color: var(--background-secondary);
   border-radius: 6px;
   border: 1px solid var(--background-modifier-border);
+  min-height: 0; // Required for flex children to shrink properly on iOS Safari
+  overflow: hidden; // Contain children within lane bounds
 
   .is-dropping > & {
     background-color: hsla(var(--interactive-accent-hsl), 0.15);
@@ -571,6 +573,8 @@ button.kanban-plugin__lane-settings-button + button.kanban-plugin__lane-settings
   margin-inline: 4px;
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-height: 0; // Needed for flex shrinking on iOS Safari
   > div {
     margin-block-start: 4px;
   }
