@@ -55,6 +55,7 @@ export function constructDatePicker(
             locale: getDefaultLocale(stateManager),
             defaultDate: date,
             inline: true,
+            now: new Date(), // Ensure 'today' marker is current
             onChange: (dates) => {
               onChange(dates);
               selfDestruct();
