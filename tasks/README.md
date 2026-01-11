@@ -10,8 +10,8 @@
 
 | Status | Count |
 |--------|-------|
-| Fixed | 47 |
-| Verified | 70 |
+| Fixed | 49 |
+| Verified | 68 |
 | Cannot Reproduce | 30 |
 | Won't Fix | 23 |
 | Needs Info | 17 |
@@ -44,6 +44,13 @@
 - `duplicate` - Duplicate of another issue
 
 ## Fixes Applied
+
+### Commit: a9c2e18 (2026-01-11)
+
+| Issue | Title | Fix |
+|-------|-------|-----|
+| [#1112](bug-1112.md) | Arrow keys in list title change tabs | Stop propagation of arrow key events in MarkdownEditor |
+| [#787](bug-787.md) | YAML frontmatter extra newlines | Trim `stringifyYaml` output to remove extra blank lines |
 
 ### Commit: 4acecb7 (2026-01-10)
 
