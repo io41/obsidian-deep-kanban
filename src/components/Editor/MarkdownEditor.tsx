@@ -232,6 +232,24 @@ export function MarkdownEditor({
                 },
                 preventDefault: true,
               },
+              {
+                // Cmd+K / Ctrl+K creates a markdown link from selection
+                key: 'Mod-k',
+                run: (cm) => {
+                  const selection = cm.state.selection.main;
+                  const selectedText = cm.state.sliceDoc(selection.from, selection.to);
+                  const linkText = selectedText || 'link text';
+                  const newText = `[${linkText}]()`;
+                  // Position cursor inside the parentheses
+                  const cursorPos = selection.from + linkText.length + 3;
+                  cm.dispatch({
+                    changes: { from: selection.from, to: selection.to, insert: newText },
+                    selection: EditorSelection.cursor(cursorPos),
+                  });
+                  return true;
+                },
+                preventDefault: true,
+              },
             ])
           )
         );

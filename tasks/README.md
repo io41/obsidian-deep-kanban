@@ -10,8 +10,8 @@
 
 | Status | Count |
 |--------|-------|
-| Fixed | 55 |
-| Verified | 61 |
+| Fixed | 57 |
+| Verified | 59 |
 | Cannot Reproduce | 30 |
 | Won't Fix | 24 |
 | Needs Info | 17 |
@@ -44,6 +44,13 @@
 - `duplicate` - Duplicate of another issue
 
 ## Fixes Applied
+
+### Commit: (pending) (2026-01-11)
+
+| Issue | Title | Fix |
+|-------|-------|-----|
+| [#1162](bug-1162.md) | Cannot drag to reorder list | Register entity immediately in hitboxEntities to fix IntersectionObserver timing race |
+| [#636](bug-636.md) | Cmd+K doesn't create link | Add Mod-k keymap handler to create markdown link from selection |
 
 ### Commit: 3e54dc3 (2026-01-11)
 
