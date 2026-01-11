@@ -28,19 +28,25 @@ export function replaceNewLines(str: string) {
 }
 
 export function replaceBrs(str: string) {
-  // Split by lines to preserve <br> inside table cells
+  // Split by lines to preserve <br> inside table cells and code blocks
   const lines = str.split('\n');
   const result: string[] = [];
+  let inCodeBlock = false;
 
   for (const line of lines) {
+    // Track code block state (``` markers)
+    if (line.trim().startsWith('```')) {
+      inCodeBlock = !inCodeBlock;
+    }
+
     // Check if line looks like a table row (contains | character not at line start/end only)
     const isTableRow = /\|.*\|/.test(line.trim()) || line.trim().startsWith('|');
 
-    if (isTableRow) {
-      // Preserve <br> in table cells - don't convert them
+    if (isTableRow || inCodeBlock) {
+      // Preserve <br> in table cells and code blocks - don't convert them
       result.push(line);
     } else {
-      // For non-table content, convert <br> to newlines
+      // For non-table/non-code content, convert <br> to newlines
       result.push(line.replace(/<br>/g, '\n'));
     }
   }

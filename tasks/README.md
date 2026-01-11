@@ -10,8 +10,8 @@
 
 | Status | Count |
 |--------|-------|
-| Fixed | 57 |
-| Verified | 59 |
+| Fixed | 59 |
+| Verified | 57 |
 | Cannot Reproduce | 30 |
 | Won't Fix | 24 |
 | Needs Info | 17 |
@@ -45,7 +45,14 @@
 
 ## Fixes Applied
 
-### Commit: (pending) (2026-01-11)
+### Commit: a8342bd (2026-01-11)
+
+| Issue | Title | Fix |
+|-------|-------|-----|
+| [#996](bug-996.md) | New notes not created in set folder | Check folder exists with instanceof before using |
+| [#1172](bug-1172.md) | Multiline code blocks broken | Preserve newlines inside code blocks in replaceBrs |
+
+### Commit: d2b109f (2026-01-11)
 
 | Issue | Title | Fix |
 |-------|-------|-----|
