@@ -160,6 +160,23 @@ export function createSearchSelect({
           });
         }
 
+        // If we have a stored value that doesn't exist in the list (e.g., folder was moved/deleted),
+        // add it to the dropdown so users can see what was configured and change it
+        let staleValueAdded = false;
+        if (value && typeof value === 'string' && list.findIndex((f) => f.value === value) === -1) {
+          staleValueAdded = true;
+          list = update(list, {
+            $push: [
+              {
+                value: value,
+                label: `${value} (${t('not found')})`,
+                selected: false,
+                disabled: false,
+              },
+            ],
+          });
+        }
+
         const c = new Choices(el, {
           placeholder: true,
           position: 'bottom' as 'auto',
@@ -168,7 +185,7 @@ export function createSearchSelect({
           choices: list,
         }).setChoiceByValue('');
 
-        if (value && typeof value === 'string' && list.findIndex((f) => f.value === value) > -1) {
+        if (value && typeof value === 'string' && (staleValueAdded || list.findIndex((f) => f.value === value) > -1)) {
           c.setChoiceByValue(value);
         }
 

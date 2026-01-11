@@ -10,8 +10,8 @@
 
 | Status | Count |
 |--------|-------|
-| Fixed | 66 |
-| Verified | 50 |
+| Fixed | 67 |
+| Verified | 49 |
 | Cannot Reproduce | 30 |
 | Won't Fix | 24 |
 | Needs Info | 17 |
@@ -46,6 +46,12 @@
 ## Fixes Applied
 
 ### Commit: (pending) (2026-01-11)
+
+| Issue | Title | Fix |
+|-------|-------|-----|
+| [#652](bug-652.md) | Note folder dropdown empty after folder move | Show stale values in dropdown with '(not found)' label |
+
+### Commit: b877c41 (2026-01-11)
 
 | Issue | Title | Fix |
 |-------|-------|-----|

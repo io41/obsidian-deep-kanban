@@ -50,6 +50,7 @@ const en = {
     'Note: No template plugins are currently enabled.',
   default: 'default',
   'Search...': 'Search...',
+  'not found': 'not found',
 
   // Settings.ts
   'New line trigger': 'New line trigger',
