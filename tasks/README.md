@@ -10,8 +10,8 @@
 
 | Status | Count |
 |--------|-------|
-| Fixed | 61 |
-| Verified | 55 |
+| Fixed | 62 |
+| Verified | 54 |
 | Cannot Reproduce | 30 |
 | Won't Fix | 24 |
 | Needs Info | 17 |
@@ -44,6 +44,12 @@
 - `duplicate` - Duplicate of another issue
 
 ## Fixes Applied
+
+### Commit: d03a264 (2026-01-11)
+
+| Issue | Title | Fix |
+|-------|-------|-----|
+| [#665](bug-665.md) | Add a card button not visible on iOS | Add flex: 1, min-height: 0 to lane-items for proper iOS Safari flex sizing |
 
 ### Commit: fc52b5b (2026-01-11)
 
