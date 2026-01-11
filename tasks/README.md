@@ -10,8 +10,8 @@
 
 | Status | Count |
 |--------|-------|
-| Fixed | 46 |
-| Verified | 71 |
+| Fixed | 47 |
+| Verified | 70 |
 | Cannot Reproduce | 30 |
 | Won't Fix | 23 |
 | Needs Info | 17 |
@@ -44,6 +44,12 @@
 - `duplicate` - Duplicate of another issue
 
 ## Fixes Applied
+
+### Commit: 4acecb7 (2026-01-10)
+
+| Issue | Title | Fix |
+|-------|-------|-----|
+| [#831](bug-831.md) | Date color rules - longer spans override shorter | Sort by distance from now so shorter time spans checked first |
 
 ### Commit: 2d4790c (2026-01-10)
 
