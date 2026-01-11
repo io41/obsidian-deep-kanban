@@ -45,7 +45,7 @@
 
 ## Fixes Applied
 
-### Commit: TBD (2026-01-11)
+### Commit: 3e54dc3 (2026-01-11)
 
 | Issue | Title | Fix |
 |-------|-------|-----|
