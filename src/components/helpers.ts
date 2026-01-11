@@ -291,7 +291,11 @@ export function getDateColorFn(dateColors: DateColor[]) {
     if (b[0] === 'after') return -1;
     if (b[0] === 'before') return -1;
 
-    return a[0].isBefore(b[0]) ? -1 : 1;
+    // Sort by distance from now - shorter time spans should be checked first
+    // This ensures more specific rules take priority over broader ones
+    const distA = Math.abs(a[0].diff(now));
+    const distB = Math.abs(b[0].diff(now));
+    return distA - distB;
   });
 
   return (date: moment.Moment) => {
