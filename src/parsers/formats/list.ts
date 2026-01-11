@@ -445,7 +445,9 @@ export function boardToMd(board: Board) {
     return md + laneToMd(lane);
   }, '');
 
-  const frontmatter = ['---', '', stringifyYaml(board.data.frontmatter), '---', '', ''].join('\n');
+  // Use trim() to remove extra newlines from stringifyYaml output
+  const yamlContent = stringifyYaml(board.data.frontmatter).trim();
+  const frontmatter = `---\n${yamlContent}\n---\n\n`;
 
   return frontmatter + lanes + archiveToMd(board.data.archive) + settingsToCodeblock(board);
 }

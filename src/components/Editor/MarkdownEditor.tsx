@@ -167,6 +167,13 @@ export function MarkdownEditor({
                 }
                 return true;
               },
+              keydown: (evt) => {
+                // Stop arrow key events from propagating to Obsidian's workspace navigation
+                if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(evt.key)) {
+                  evt.stopPropagation();
+                }
+                return false;
+              },
             })
           )
         );
