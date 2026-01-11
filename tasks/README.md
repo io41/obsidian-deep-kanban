@@ -10,8 +10,8 @@
 
 | Status | Count |
 |--------|-------|
-| Fixed | 62 |
-| Verified | 54 |
+| Fixed | 63 |
+| Verified | 53 |
 | Cannot Reproduce | 30 |
 | Won't Fix | 24 |
 | Needs Info | 17 |
@@ -44,6 +44,12 @@
 - `duplicate` - Duplicate of another issue
 
 ## Fixes Applied
+
+### Commit: b7589f0 (2026-01-11)
+
+| Issue | Title | Fix |
+|-------|-------|-----|
+| [#680](bug-680.md) | Tab title bar shows when disabled | Remove !important forcing view-header display |
 
 ### Commit: d03a264 (2026-01-11)
 
