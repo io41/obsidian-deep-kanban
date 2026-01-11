@@ -10,10 +10,10 @@
 
 | Status | Count |
 |--------|-------|
-| Fixed | 54 |
-| Verified | 63 |
+| Fixed | 55 |
+| Verified | 61 |
 | Cannot Reproduce | 30 |
-| Won't Fix | 23 |
+| Won't Fix | 24 |
 | Needs Info | 17 |
 | Duplicate | 15 |
 | Unverified | 0 |
@@ -44,6 +44,12 @@
 - `duplicate` - Duplicate of another issue
 
 ## Fixes Applied
+
+### Commit: TBD (2026-01-11)
+
+| Issue | Title | Fix |
+|-------|-------|-----|
+| [#516](bug-516.md) | Markdown links with date selector broken | Use minimal encoding for path (only encode parentheses) |
 
 ### Commit: 3aba230 (2026-01-11)
 

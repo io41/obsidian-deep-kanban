@@ -27,14 +27,22 @@ export function gotoPrevDailyNote(app: App, file: TFile) {
   dailyNotePlugin.gotoPreviousExisting(date);
 }
 
+// Encode path for markdown links - only encode characters that break link syntax
+function encodeMarkdownLinkPath(path: string): string {
+  // Only encode parentheses which would break markdown link syntax
+  // Spaces and other characters work fine in Obsidian markdown links
+  return path.replace(/\(/g, '%28').replace(/\)/g, '%29');
+}
+
 export function buildLinkToDailyNote(app: App, dateStr: string) {
   const dailyNoteSettings = getDailyNoteSettings();
   const shouldUseMarkdownLinks = !!(app.vault as any).getConfig('useMarkdownLinks');
 
   if (shouldUseMarkdownLinks) {
-    return `[${dateStr}](${
-      dailyNoteSettings.folder ? `${encodeURIComponent(dailyNoteSettings.folder)}/` : ''
-    }${encodeURIComponent(dateStr)}.md)`;
+    const folder = dailyNoteSettings.folder
+      ? `${encodeMarkdownLinkPath(dailyNoteSettings.folder)}/`
+      : '';
+    return `[${dateStr}](${folder}${encodeMarkdownLinkPath(dateStr)}.md)`;
   }
 
   return `[[${dateStr}]]`;
