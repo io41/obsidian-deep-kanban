@@ -454,14 +454,28 @@ export function useDragHandle(
 
       const onEnd = (e: PointerEvent) => {
         if (e.pointerId !== pointerId) return;
+        cleanup();
+        dndManager.dragManager.dragEnd(e);
+      };
+
+      // Cancel drag when window loses focus (e.g., opening link in new window)
+      const onBlur = () => {
+        cleanup();
+        // Create a synthetic event for dragEnd
+        const syntheticEvent = new PointerEvent('pointercancel', {
+          pointerId: pointerId,
+        });
+        dndManager.dragManager.dragEnd(syntheticEvent);
+      };
+
+      const cleanup = () => {
         win.clearTimeout(longPressTimeout);
         isDragging = false;
-
-        dndManager.dragManager.dragEnd(e);
 
         win.removeEventListener('pointermove', onMove);
         win.removeEventListener('pointerup', onEnd);
         win.removeEventListener('pointercancel', onEnd);
+        win.removeEventListener('blur', onBlur);
 
         if (isTouchEvent) {
           win.removeEventListener('contextmenu', cancelEvent, true);
@@ -472,6 +486,7 @@ export function useDragHandle(
       win.addEventListener('pointermove', onMove);
       win.addEventListener('pointerup', onEnd);
       win.addEventListener('pointercancel', onEnd);
+      win.addEventListener('blur', onBlur);
     };
 
     const swallowTouchEvent = (e: TouchEvent) => {
