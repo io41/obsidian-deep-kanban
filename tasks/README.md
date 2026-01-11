@@ -10,8 +10,8 @@
 
 | Status | Count |
 |--------|-------|
-| Fixed | 45 |
-| Verified | 72 |
+| Fixed | 46 |
+| Verified | 71 |
 | Cannot Reproduce | 30 |
 | Won't Fix | 23 |
 | Needs Info | 17 |
@@ -44,6 +44,12 @@
 - `duplicate` - Duplicate of another issue
 
 ## Fixes Applied
+
+### Commit: 2d4790c (2026-01-10)
+
+| Issue | Title | Fix |
+|-------|-------|-----|
+| [#810](bug-810.md) | Calendar 'today' marker doesn't update | Add `now: new Date()` to flatpickr in `constructMenuDatePicker` |
 
 ### Commit: 83aafa4 (2026-01-10)
 
