@@ -58,7 +58,8 @@ function getEditorAppProxy(view: KanbanView) {
 
 function getMarkdownController(
   view: KanbanView,
-  getEditor: () => ObsidianEditor
+  getEditor: () => ObsidianEditor,
+  onSave?: () => void
 ): Record<any, any> {
   return {
     app: view.app,
@@ -76,6 +77,13 @@ function getMarkdownController(
     },
     get path() {
       return view.file.path;
+    },
+    // Handle vim :w and other save triggers
+    save() {
+      if (onSave) onSave();
+    },
+    requestSave() {
+      if (onSave) onSave();
     },
   };
 }
@@ -208,6 +216,15 @@ export function MarkdownEditor({
                 },
                 preventDefault: true,
               },
+              {
+                // Cmd+S / Ctrl+S saves the card (for vim users and general UX)
+                key: 'Mod-s',
+                run: (cm) => {
+                  onSubmit(cm);
+                  return true;
+                },
+                preventDefault: true,
+              },
             ])
           )
         );
@@ -216,7 +233,14 @@ export function MarkdownEditor({
       }
     }
 
-    const controller = getMarkdownController(view, () => editor.editor);
+    const controller = getMarkdownController(
+      view,
+      () => editor.editor,
+      // onSave callback for vim :w and Cmd+S
+      () => {
+        if (internalRef.current) onSubmit(internalRef.current);
+      }
+    );
     const app = getEditorAppProxy(view);
     const editor = view.plugin.addChild(new (Editor as any)(app, elRef.current, controller));
     const cm: EditorView = editor.cm;
