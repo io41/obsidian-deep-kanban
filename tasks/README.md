@@ -4,14 +4,14 @@
 
 - **Total Open Bugs:** 202
 - **Generated:** 2026-01-10
-- **Last Updated:** 2026-01-10
+- **Last Updated:** 2026-01-11
 
 ### Triage Progress
 
 | Status | Count |
 |--------|-------|
-| Fixed | 49 |
-| Verified | 68 |
+| Fixed | 52 |
+| Verified | 65 |
 | Cannot Reproduce | 30 |
 | Won't Fix | 23 |
 | Needs Info | 17 |
@@ -44,6 +44,14 @@
 - `duplicate` - Duplicate of another issue
 
 ## Fixes Applied
+
+### Commit: TBD (2026-01-11)
+
+| Issue | Title | Fix |
+|-------|-------|-----|
+| [#1148](bug-1148.md) | Typewriter Scroll plugin conflict | Override padding in .cm-scroller/.cm-content for kanban editors |
+| [#1167](bug-1167.md) | Move line up/down fails after kanban edit | Same root cause as #1132 - fixed by activeEditor cleanup |
+| [#1043](bug-1043.md) | Tasks/Dataview checkboxes not clickable | Allow clicks on checkboxes inside .dataview and .block-language-tasks |
 
 ### Commit: a9c2e18 (2026-01-11)
 

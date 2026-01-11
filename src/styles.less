@@ -163,6 +163,15 @@
 
     .cm-scroller {
       overflow: visible;
+      // Override Typewriter Scroll plugin padding that causes huge vertical fields
+      padding-top: 0 !important;
+      padding-bottom: 0 !important;
+    }
+
+    .cm-content {
+      // Prevent Typewriter Scroll centering transforms
+      padding-top: 0 !important;
+      padding-bottom: 0 !important;
     }
   }
 }

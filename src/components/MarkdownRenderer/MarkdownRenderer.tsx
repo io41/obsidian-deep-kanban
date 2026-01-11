@@ -133,7 +133,10 @@ export class BasicMarkdownRenderer extends Component {
         if (
           targetNode.instanceOf(HTMLElement) &&
           targetNode.hasClass('task-list-item-checkbox') &&
-          !targetNode.closest('.markdown-embed')
+          !targetNode.closest('.markdown-embed') &&
+          // Allow Tasks/Dataview plugin checkboxes to work
+          !targetNode.closest('.dataview') &&
+          !targetNode.closest('.block-language-tasks')
         ) {
           evt.preventDefault();
           evt.stopPropagation();
@@ -146,7 +149,13 @@ export class BasicMarkdownRenderer extends Component {
       'contextmenu',
       (evt) => {
         const { targetNode } = evt;
-        if (targetNode.instanceOf(HTMLElement) && targetNode.hasClass('task-list-item-checkbox')) {
+        if (
+          targetNode.instanceOf(HTMLElement) &&
+          targetNode.hasClass('task-list-item-checkbox') &&
+          !targetNode.closest('.markdown-embed') &&
+          !targetNode.closest('.dataview') &&
+          !targetNode.closest('.block-language-tasks')
+        ) {
           evt.preventDefault();
           evt.stopPropagation();
         }
