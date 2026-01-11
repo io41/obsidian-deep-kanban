@@ -179,6 +179,15 @@ export const Kanban = ({ view, stateManager }: KanbanProps) => {
 
   const html5DragHandlers = createHTMLDndHandlers(stateManager);
 
+  // Set this leaf as active when the board is clicked
+  // This ensures quick switcher recognizes the kanban pane as active
+  const handleBoardClick = useCallback(() => {
+    const leaf = view.leaf;
+    if (leaf && view.app.workspace.activeLeaf !== leaf) {
+      view.app.workspace.setActiveLeaf(leaf, { focus: false });
+    }
+  }, [view]);
+
   if (boardData === null || boardData === undefined)
     return (
       <div className={c('loading')}>
@@ -224,6 +233,7 @@ export const Kanban = ({ view, stateManager }: KanbanProps) => {
               },
               ...getCSSClass(boardData.data.frontmatter),
             ])}
+            onClick={handleBoardClick}
             {...html5DragHandlers}
           >
             {boardData.data.frontmatter?.['kanban-parent-boards'] && (

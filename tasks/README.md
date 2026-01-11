@@ -10,8 +10,8 @@
 
 | Status | Count |
 |--------|-------|
-| Fixed | 52 |
-| Verified | 65 |
+| Fixed | 54 |
+| Verified | 63 |
 | Cannot Reproduce | 30 |
 | Won't Fix | 23 |
 | Needs Info | 17 |
@@ -45,13 +45,15 @@
 
 ## Fixes Applied
 
-### Commit: TBD (2026-01-11)
+### Commit: e8f05ba (2026-01-11)
 
 | Issue | Title | Fix |
 |-------|-------|-----|
 | [#1148](bug-1148.md) | Typewriter Scroll plugin conflict | Override padding in .cm-scroller/.cm-content for kanban editors |
 | [#1167](bug-1167.md) | Move line up/down fails after kanban edit | Same root cause as #1132 - fixed by activeEditor cleanup |
 | [#1043](bug-1043.md) | Tasks/Dataview checkboxes not clickable | Allow clicks on checkboxes inside .dataview and .block-language-tasks |
+| [#465](bug-465.md) | Quick switcher doesn't recognize kanban pane | Add click handler to set active leaf |
+| [#1083](bug-1083.md) | Sort tags submenu not working on iPad | Use Platform.isMobile instead of Platform.isPhone for flat menu |
 
 ### Commit: a9c2e18 (2026-01-11)
 
