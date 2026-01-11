@@ -10,8 +10,8 @@
 
 | Status | Count |
 |--------|-------|
-| Fixed | 43 |
-| Verified | 74 |
+| Fixed | 44 |
+| Verified | 73 |
 | Cannot Reproduce | 30 |
 | Won't Fix | 23 |
 | Needs Info | 17 |
@@ -44,6 +44,12 @@
 - `duplicate` - Duplicate of another issue
 
 ## Fixes Applied
+
+### Commit: 3f08e49 (2026-01-10)
+
+| Issue | Title | Fix |
+|-------|-------|-----|
+| [#1072](bug-1072.md) | Vim mode :w doesn't save card | Added `save()` and `requestSave()` methods to editor controller, plus `Mod-s` keymap handler |
 
 ### Commit: 047825f (2026-01-10)
 
