@@ -10,8 +10,8 @@
 
 | Status | Count |
 |--------|-------|
-| Fixed | 63 |
-| Verified | 53 |
+| Fixed | 66 |
+| Verified | 50 |
 | Cannot Reproduce | 30 |
 | Won't Fix | 24 |
 | Needs Info | 17 |
@@ -44,6 +44,14 @@
 - `duplicate` - Duplicate of another issue
 
 ## Fixes Applied
+
+### Commit: (pending) (2026-01-11)
+
+| Issue | Title | Fix |
+|-------|-------|-----|
+| [#970](bug-970.md) | Non-md files rendered as embeds | Strip ! prefix from generateMarkdownLink for non-md files in linkTo() |
+| [#1121](bug-1121.md) | Table column resize broken in popout windows | Create custom resize handler using e.view.document |
+| [#1082](bug-1082.md) | Data loss when opening non-kanban file | Add warning modal before opening files with non-kanban content |
 
 ### Commit: b7589f0 (2026-01-11)
 

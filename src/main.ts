@@ -17,7 +17,7 @@ import { KanbanSettings, KanbanSettingsTab } from './Settings';
 import { StateManager } from './StateManager';
 import { DateSuggest, TimeSuggest } from './components/Editor/suggest';
 import { getParentWindow } from './dnd/util/getWindow';
-import { hasFrontmatterKey } from './helpers';
+import { hasFrontmatterKey, hasNonKanbanContent, KanbanConversionWarningModal } from './helpers';
 import { t } from './lang/helpers';
 import { basicFrontmatter, frontmatterKey } from './parsers/common';
 
@@ -403,7 +403,14 @@ export default class KanbanPlugin extends Plugin {
                 .setTitle(t('Open as kanban board'))
                 .setIcon(kanbanIcon)
                 .setSection('pane')
-                .onClick(() => {
+                .onClick(async () => {
+                  // Check if file contains content that would be lost
+                  if (await hasNonKanbanContent(this.app, file)) {
+                    const modal = new KanbanConversionWarningModal(this.app);
+                    modal.open();
+                    const proceed = await modal.waitForResult();
+                    if (!proceed) return;
+                  }
                   this.kanbanFileModes[(leaf as any).id || file.path] = kanbanViewType;
                   this.setKanbanView(leaf);
                 });
@@ -424,7 +431,14 @@ export default class KanbanPlugin extends Plugin {
               .setTitle(t('Open as kanban board'))
               .setIcon(kanbanIcon)
               .setSection('pane')
-              .onClick(() => {
+              .onClick(async () => {
+                // Check if file contains content that would be lost
+                if (await hasNonKanbanContent(this.app, file)) {
+                  const modal = new KanbanConversionWarningModal(this.app);
+                  modal.open();
+                  const proceed = await modal.waitForResult();
+                  if (!proceed) return;
+                }
                 this.kanbanFileModes[(leaf as any).id || file.path] = kanbanViewType;
                 this.setKanbanView(leaf);
               });

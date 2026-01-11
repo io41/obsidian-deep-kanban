@@ -28,6 +28,15 @@ const en = {
   'Are you sure you want to archive all completed cards on this board?':
     'Are you sure you want to archive all completed cards on this board?',
 
+  // Data loss warning
+  'Warning: Content may be lost': 'Warning: Content may be lost',
+  'This file contains content that is not compatible with Kanban format (such as tables, images, code blocks, or other non-list content).':
+    'This file contains content that is not compatible with Kanban format (such as tables, images, code blocks, or other non-list content).',
+  'Opening as a Kanban board will only preserve headings (as lanes) and list items (as cards). All other content will be permanently deleted.':
+    'Opening as a Kanban board will only preserve headings (as lanes) and list items (as cards). All other content will be permanently deleted.',
+  'Consider backing up the file before proceeding.': 'Consider backing up the file before proceeding.',
+  'Open as Kanban anyway': 'Open as Kanban anyway',
+
   // parser.ts
   Complete: 'Complete',
   Archive: 'Archive',

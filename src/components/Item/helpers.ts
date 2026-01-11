@@ -326,7 +326,15 @@ export function linkTo(
   subpath?: string
 ) {
   // Generate a link relative to this Kanban board, respecting user link type preferences
-  return stateManager.app.fileManager.generateMarkdownLink(file, sourcePath, subpath);
+  const link = stateManager.app.fileManager.generateMarkdownLink(file, sourcePath, subpath);
+
+  // For non-markdown files, Obsidian may generate an embed syntax (![[...]] or ![...])
+  // Convert embeds to regular links so files display as clickable links, not rendered previews
+  if (file.extension !== 'md' && link.startsWith('!')) {
+    return link.slice(1);
+  }
+
+  return link;
 }
 
 export function getMarkdown(html: string) {
