@@ -192,10 +192,20 @@ export class DragManager {
     this.scrollEntities.forEach((entity) => {
       const data = entity.getData();
 
-      if (win === data.win && data.accepts.includes(type)) {
-        scrollEntities.push(entity);
-        scrollHitboxes.push(entity.getHitbox());
+      // Filter by window and accepted types
+      if (win !== data.win || !data.accepts.includes(type)) {
+        return;
       }
+
+      // For non-HTML drags, also filter by scopeId to prevent cross-board scroll
+      // HTML drags (scopeId === 'htmldnd') should allow scrolling any board
+      const dragScopeId = this.dragEntity?.scopeId;
+      if (dragScopeId && dragScopeId !== 'htmldnd' && entity.scopeId !== dragScopeId) {
+        return;
+      }
+
+      scrollEntities.push(entity);
+      scrollHitboxes.push(entity.getHitbox());
     });
 
     if (hitboxEntities.length === 0 && scrollEntities.length === 0) {

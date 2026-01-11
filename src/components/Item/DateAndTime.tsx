@@ -1,11 +1,14 @@
 import classcat from 'classcat';
 import { getLinkpath, moment } from 'obsidian';
-import { JSX, useMemo } from 'preact/compat';
+import { JSX, useEffect, useMemo, useState } from 'preact/compat';
 import { StateManager } from 'src/StateManager';
 import { t } from 'src/lang/helpers';
 
 import { c } from '../helpers';
 import { DateColor, Item } from '../types';
+
+// Refresh interval for relative dates (1 minute)
+const RELATIVE_DATE_REFRESH_INTERVAL = 60 * 1000;
 
 export function getRelativeDate(date: moment.Moment, time: moment.Moment) {
   if (time) {
@@ -38,6 +41,21 @@ interface DateProps {
 
 export function RelativeDate({ item, stateManager }: DateProps) {
   const shouldShowRelativeDate = stateManager.useSetting('show-relative-date');
+  // State to trigger re-renders for updating relative dates
+  const [, setTick] = useState(0);
+
+  useEffect(() => {
+    if (!shouldShowRelativeDate || !item.data.metadata.date) {
+      return;
+    }
+
+    // Set up interval to refresh relative date display
+    const interval = setInterval(() => {
+      setTick((t) => t + 1);
+    }, RELATIVE_DATE_REFRESH_INTERVAL);
+
+    return () => clearInterval(interval);
+  }, [shouldShowRelativeDate, item.data.metadata.date]);
 
   if (!shouldShowRelativeDate || !item.data.metadata.date) {
     return null;
