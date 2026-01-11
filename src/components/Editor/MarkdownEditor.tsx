@@ -161,11 +161,22 @@ export function MarkdownEditor({
                 return true;
               },
               blur: () => {
+                (this.cm as any)._contextMenuOpen = false;
                 if (Platform.isMobile) {
                   view.contentEl.removeClass('is-mobile-editing');
                   this.app.mobileToolbar.update();
                 }
                 return true;
+              },
+              contextmenu: () => {
+                // Track when context menu opens (e.g., for spell check suggestions)
+                (this.cm as any)._contextMenuOpen = true;
+                return false;
+              },
+              click: () => {
+                // Context menu dismissed on click
+                (this.cm as any)._contextMenuOpen = false;
+                return false;
               },
               keydown: (evt) => {
                 // Stop arrow key events from propagating to Obsidian's workspace navigation
@@ -190,6 +201,11 @@ export function MarkdownEditor({
         }
 
         const makeEnterHandler = (mod: boolean, shift: boolean) => (cm: EditorView) => {
+          // If context menu is open (e.g., spell check), let the browser handle Enter
+          if ((cm as any)._contextMenuOpen) {
+            (cm as any)._contextMenuOpen = false;
+            return false;
+          }
           const didRun = onEnter(cm, mod, shift);
           if (didRun) return true;
           if (this.app.vault.getConfig('smartIndentList')) {
@@ -207,17 +223,16 @@ export function MarkdownEditor({
                 key: 'Enter',
                 run: makeEnterHandler(false, false),
                 shift: makeEnterHandler(false, true),
-                preventDefault: true,
               },
               {
                 key: 'Mod-Enter',
                 run: makeEnterHandler(true, false),
                 shift: makeEnterHandler(true, true),
-                preventDefault: true,
               },
               {
                 key: 'Escape',
                 run: (cm) => {
+                  (cm as any)._contextMenuOpen = false;
                   onEscape(cm);
                   return false;
                 },

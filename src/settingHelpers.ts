@@ -10,11 +10,20 @@ export const defaultDateTrigger = '@';
 export const defaultTimeTrigger = '@@';
 export const defaultMetadataPosition = 'body';
 
+// Maximum number of items to show in dropdowns to prevent UI freeze on large vaults
+const MAX_DROPDOWN_ITEMS = 500;
+
 export function getFolderChoices(app: App) {
   const folderList: IChoices.Choice[] = [];
+  let limitReached = false;
 
   Vault.recurseChildren(app.vault.getRoot(), (f) => {
+    if (limitReached) return;
     if (f instanceof TFolder) {
+      if (folderList.length >= MAX_DROPDOWN_ITEMS) {
+        limitReached = true;
+        return;
+      }
       folderList.push({
         value: f.path,
         label: f.path,
@@ -24,11 +33,12 @@ export function getFolderChoices(app: App) {
     }
   });
 
-  return folderList;
+  return { choices: folderList, limitReached };
 }
 
 export function getTemplateChoices(app: App, folderStr?: string) {
   const fileList: IChoices.Choice[] = [];
+  let limitReached = false;
 
   let folder = folderStr ? app.vault.getAbstractFileByPath(folderStr) : null;
 
@@ -37,7 +47,12 @@ export function getTemplateChoices(app: App, folderStr?: string) {
   }
 
   Vault.recurseChildren(folder as TFolder, (f) => {
+    if (limitReached) return;
     if (f instanceof TFile) {
+      if (fileList.length >= MAX_DROPDOWN_ITEMS) {
+        limitReached = true;
+        return;
+      }
       fileList.push({
         value: f.path,
         label: f.basename,
@@ -47,14 +62,14 @@ export function getTemplateChoices(app: App, folderStr?: string) {
     }
   });
 
-  return fileList;
+  return { choices: fileList, limitReached };
 }
 
 export function getListOptions(app: App) {
   const { templateFolder, templatesEnabled, templaterPlugin } = getTemplatePlugins(app);
 
-  const templateFiles = getTemplateChoices(app, templateFolder);
-  const vaultFolders = getFolderChoices(app);
+  const templateResult = getTemplateChoices(app, templateFolder);
+  const folderResult = getFolderChoices(app);
 
   let templateWarning = '';
 
@@ -62,10 +77,20 @@ export function getListOptions(app: App) {
     templateWarning = t('Note: No template plugins are currently enabled.');
   }
 
+  // Add warning if limits were reached
+  const limitWarnings: string[] = [];
+  if (templateResult.limitReached) {
+    limitWarnings.push(t('Only first %1 templates shown. Use search to filter.', MAX_DROPDOWN_ITEMS.toString()));
+  }
+  if (folderResult.limitReached) {
+    limitWarnings.push(t('Only first %1 folders shown. Use search to filter.', MAX_DROPDOWN_ITEMS.toString()));
+  }
+
   return {
-    templateFiles,
-    vaultFolders,
+    templateFiles: templateResult.choices,
+    vaultFolders: folderResult.choices,
     templateWarning,
+    limitWarnings,
   };
 }
 

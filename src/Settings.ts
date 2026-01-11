@@ -199,7 +199,7 @@ export class SettingsManager {
   constructUI(contentEl: HTMLElement, heading: string, local: boolean) {
     this.win = contentEl.win;
 
-    const { templateFiles, vaultFolders, templateWarning } = getListOptions(this.app);
+    const { templateFiles, vaultFolders, templateWarning, limitWarnings } = getListOptions(this.app);
 
     contentEl.createEl('h3', { text: heading });
 
@@ -212,6 +212,14 @@ export class SettingsManager {
         text: t(
           'Set the default Kanban board settings. Settings can be overridden on a board-by-board basis.'
         ),
+      });
+    }
+
+    // Display limit warnings for large vaults
+    if (limitWarnings?.length) {
+      const warningEl = contentEl.createEl('div', { cls: c('settings-limit-warning') });
+      limitWarnings.forEach((warning) => {
+        warningEl.createEl('p', { text: warning });
       });
     }
 
