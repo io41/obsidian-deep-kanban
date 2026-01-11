@@ -10,8 +10,8 @@
 
 | Status | Count |
 |--------|-------|
-| Fixed | 59 |
-| Verified | 57 |
+| Fixed | 61 |
+| Verified | 55 |
 | Cannot Reproduce | 30 |
 | Won't Fix | 24 |
 | Needs Info | 17 |
@@ -44,6 +44,13 @@
 - `duplicate` - Duplicate of another issue
 
 ## Fixes Applied
+
+### Commit: fc52b5b (2026-01-11)
+
+| Issue | Title | Fix |
+|-------|-------|-----|
+| [#638](bug-638.md) | Context menu spell check not working | Track contextmenu events and allow Enter to pass through when menu open |
+| [#1002](bug-1002.md) | Settings freeze with 80k+ files | Limit dropdown items to 500 to prevent UI freeze on large vaults |
 
 ### Commit: a8342bd (2026-01-11)
 
