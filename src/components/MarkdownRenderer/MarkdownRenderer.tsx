@@ -162,6 +162,29 @@ export class BasicMarkdownRenderer extends Component {
       },
       { capture: true }
     );
+
+    // Handle callout collapse/expand toggle
+    containerEl.addEventListener('click', (evt) => {
+      const { targetNode } = evt;
+      if (!targetNode.instanceOf(HTMLElement)) return;
+
+      // Check if click is on callout fold button or callout title (for collapsible callouts)
+      const foldButton = targetNode.closest('.callout-fold');
+      const calloutTitle = targetNode.closest('.callout-title');
+
+      if (foldButton || calloutTitle) {
+        const callout = targetNode.closest('.callout');
+        if (callout && callout.instanceOf(HTMLElement)) {
+          // Only toggle if it's a collapsible callout (has fold button)
+          const hasFold = callout.querySelector('.callout-fold');
+          if (hasFold) {
+            evt.preventDefault();
+            evt.stopPropagation();
+            callout.toggleClass('is-collapsed', !callout.hasClass('is-collapsed'));
+          }
+        }
+      }
+    });
   }
 
   migrate(el: HTMLElement) {

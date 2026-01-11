@@ -10,8 +10,8 @@
 
 | Status | Count |
 |--------|-------|
-| Fixed | 68 |
-| Verified | 48 |
+| Fixed | 70 |
+| Verified | 46 |
 | Cannot Reproduce | 30 |
 | Won't Fix | 24 |
 | Needs Info | 17 |

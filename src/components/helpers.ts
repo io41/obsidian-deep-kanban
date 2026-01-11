@@ -113,13 +113,26 @@ export function useIMEInputProps() {
 
 export const templaterDetectRegex = /<%/;
 
+async function waitForEditorReady(app: App, timeout: number = 500): Promise<MarkdownView | null> {
+  const interval = 10;
+  const maxAttempts = timeout / interval;
+
+  for (let i = 0; i < maxAttempts; i++) {
+    const view = app.workspace.getActiveViewOfType(MarkdownView);
+    if (view && view.editor) return view;
+    await new Promise((resolve) => setTimeout(resolve, interval));
+  }
+  return null;
+}
+
 export async function applyTemplate(stateManager: StateManager, templatePath?: string) {
   const templateFile = templatePath
     ? stateManager.app.vault.getAbstractFileByPath(templatePath)
     : null;
 
   if (templateFile && templateFile instanceof TFile) {
-    const activeView = stateManager.app.workspace.getActiveViewOfType(MarkdownView);
+    // Wait for the MarkdownView and editor to be ready
+    const activeView = await waitForEditorReady(stateManager.app);
     const activeFile = stateManager.app.workspace.getActiveFile();
 
     // Check if the file already has content (e.g., from Templater's auto-template feature)
@@ -152,7 +165,10 @@ export async function applyTemplate(stateManager: StateManager, templatePath?: s
       // If both plugins are enabled, attempt to detect templater first
       if (templatesEnabled && templaterEnabled) {
         if (templaterDetectRegex.test(templateContent)) {
-          return await templaterPlugin.append_template_to_active_file(templateFile);
+          await templaterPlugin.append_template_to_active_file(templateFile);
+          // Sync editor with file content to prevent empty buffer overwrite
+          await syncEditorWithFile(stateManager.app, activeFile, activeView);
+          return;
         }
 
         return await templatesPlugin.instance.insertTemplate(templateFile);
@@ -163,7 +179,10 @@ export async function applyTemplate(stateManager: StateManager, templatePath?: s
       }
 
       if (templaterEnabled) {
-        return await templaterPlugin.append_template_to_active_file(templateFile);
+        await templaterPlugin.append_template_to_active_file(templateFile);
+        // Sync editor with file content to prevent empty buffer overwrite
+        await syncEditorWithFile(stateManager.app, activeFile, activeView);
+        return;
       }
 
       // No template plugins enabled so we can just append the template to the doc
@@ -175,6 +194,26 @@ export async function applyTemplate(stateManager: StateManager, templatePath?: s
       console.error(e);
       stateManager.setError(e);
     }
+  }
+}
+
+async function syncEditorWithFile(
+  app: App,
+  file: TFile | null,
+  view: MarkdownView | null
+): Promise<void> {
+  if (!file || !view || !view.editor) return;
+
+  // Small delay to ensure Templater has finished writing to disk
+  await new Promise((resolve) => setTimeout(resolve, 50));
+
+  // Read the file content and update the editor if needed
+  const fileContent = await app.vault.read(file);
+  const editorContent = view.editor.getValue();
+
+  // If the editor is empty but the file has content, sync from file
+  if (editorContent.trim().length === 0 && fileContent.trim().length > 0) {
+    view.editor.setValue(fileContent);
   }
 }
 
