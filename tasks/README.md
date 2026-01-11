@@ -10,8 +10,8 @@
 
 | Status | Count |
 |--------|-------|
-| Fixed | 44 |
-| Verified | 73 |
+| Fixed | 45 |
+| Verified | 72 |
 | Cannot Reproduce | 30 |
 | Won't Fix | 23 |
 | Needs Info | 17 |
@@ -44,6 +44,12 @@
 - `duplicate` - Duplicate of another issue
 
 ## Fixes Applied
+
+### Commit: 83aafa4 (2026-01-10)
+
+| Issue | Title | Fix |
+|-------|-------|-----|
+| [#1132](bug-1132.md) | Keyboard shortcuts blocked after view switch | Move `activeEditor` cleanup outside mobile block, add explicit blur on cleanup |
 
 ### Commit: 3f08e49 (2026-01-10)
 
