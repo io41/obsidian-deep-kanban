@@ -270,19 +270,26 @@ export function MarkdownEditor({
     }
 
     return () => {
+      // Blur the editor to release focus and keyboard control
+      if (cm.hasFocus) {
+        cm.contentDOM.blur();
+      }
+
+      // Clear activeEditor on all platforms to prevent keyboard shortcut blocking
+      if (view.activeEditor === controller) {
+        view.activeEditor = null;
+      }
+
+      if (app.workspace.activeEditor === controller) {
+        app.workspace.activeEditor = null;
+      }
+
       if (Platform.isMobile) {
         cm.dom.win.removeEventListener('keyboardDidShow', onShow);
-
-        if (view.activeEditor === controller) {
-          view.activeEditor = null;
-        }
-
-        if (app.workspace.activeEditor === controller) {
-          app.workspace.activeEditor = null;
-          (app as any).mobileToolbar.update();
-          view.contentEl.removeClass('is-mobile-editing');
-        }
+        (app as any).mobileToolbar.update();
+        view.contentEl.removeClass('is-mobile-editing');
       }
+
       view.plugin.removeChild(editor);
       internalRef.current = null;
       if (editorRef) editorRef.current = null;
