@@ -113,12 +113,32 @@ export const Kanban = ({ view, stateManager }: KanbanProps) => {
       setIsLaneFormVisible(true);
     };
 
+    const scrollToBlock = (blockId: string) => {
+      // Wait a short moment for the DOM to be ready
+      const win = view.getWindow();
+      win.setTimeout(() => {
+        const cardEl = rootRef.current?.querySelector(`[data-block-id="${blockId}"]`) as HTMLElement;
+        if (cardEl) {
+          // Scroll the card into view
+          cardEl.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+          // Add highlight class
+          cardEl.classList.add(c('highlight'));
+          // Remove highlight after animation
+          win.setTimeout(() => {
+            cardEl.classList.remove(c('highlight'));
+          }, 2000);
+        }
+      }, 100);
+    };
+
     view.emitter.on('hotkey', onSearchHotkey);
     view.emitter.on('showLaneForm', showLaneForm);
+    view.emitter.on('scrollToBlock', scrollToBlock);
 
     return () => {
       view.emitter.off('hotkey', onSearchHotkey);
       view.emitter.off('showLaneForm', showLaneForm);
+      view.emitter.off('scrollToBlock', scrollToBlock);
     };
   }, [view]);
 

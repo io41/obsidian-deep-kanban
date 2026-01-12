@@ -255,6 +255,22 @@ export class KanbanView extends TextFileView implements HoverParent {
     return state;
   }
 
+  getEphemeralState(): { subpath?: string } {
+    return {};
+  }
+
+  setEphemeralState(state: { subpath?: string }): void {
+    if (state?.subpath) {
+      // Extract block ID from subpath (e.g., "#^blockid" -> "blockid")
+      const match = state.subpath.match(/^\^(.+)$/);
+      if (match) {
+        const blockId = match[1];
+        // Emit event to scroll to the card with this blockId
+        this.emitter.emit('scrollToBlock', blockId);
+      }
+    }
+  }
+
   setViewState<K extends keyof KanbanViewSettings>(
     key: K,
     val?: KanbanViewSettings[K],

@@ -1852,3 +1852,44 @@ body:not(.native-scrollbars) .kanban-plugin__scroll-container::-webkit-scrollbar
 .kanban-plugin__breadcrumb-separator {
   color: var(--text-faint);
 }
+
+// Card highlight animation for scroll-to-card (bug #754)
+.kanban-plugin__highlight {
+  animation: kanban-card-highlight 2s ease-out;
+}
+
+@keyframes kanban-card-highlight {
+  0% {
+    box-shadow: 0 0 0 3px var(--text-accent);
+    outline: 2px solid var(--text-accent);
+  }
+  50% {
+    box-shadow: 0 0 15px var(--text-accent);
+    outline: 2px solid var(--text-accent);
+  }
+  100% {
+    box-shadow: none;
+    outline: none;
+  }
+}
+
+// Mobile fix for add card button staying visible (bug #802)
+.is-mobile .kanban-plugin__lane {
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+
+  .kanban-plugin__lane-items {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+  }
+}
+
+.is-mobile .kanban-plugin__item-button-wrapper {
+  flex-shrink: 0;
+  position: sticky;
+  bottom: 0;
+  background: var(--background-secondary);
+  padding-top: 4px;
+}

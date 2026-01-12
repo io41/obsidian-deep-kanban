@@ -400,12 +400,13 @@ export class StateManager {
       return update(lane, {
         children: {
           $set: lane.children.filter((item) => {
+            // Only archive items that are truly complete (have the done checkChar)
             const isComplete = item.data.checked && item.data.checkChar === getTaskStatusDone();
-            if (lane.data.shouldMarkItemsComplete || isComplete) {
+            if (isComplete) {
               archived.push(item);
             }
 
-            return !isComplete && !lane.data.shouldMarkItemsComplete;
+            return !isComplete;
           }),
         },
       });
