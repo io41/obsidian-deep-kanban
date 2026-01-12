@@ -4,17 +4,17 @@
 
 - **Total Open Bugs:** 202
 - **Generated:** 2026-01-10
-- **Last Updated:** 2026-01-11
+- **Last Updated:** 2026-01-12
 
 ### Triage Progress
 
 | Status | Count |
 |--------|-------|
-| Fixed | 70 |
-| Verified | 46 |
+| Fixed | 78 |
+| Verified | 37 |
 | Cannot Reproduce | 30 |
 | Won't Fix | 24 |
-| Needs Info | 17 |
+| Needs Info | 18 |
 | Duplicate | 15 |
 | Unverified | 0 |
 
@@ -44,6 +44,29 @@
 - `duplicate` - Duplicate of another issue
 
 ## Fixes Applied
+
+### Commit: 9ca8685 (2026-01-12)
+
+| Issue | Title | Fix |
+|-------|-------|-----|
+| [#1103](bug-1103.md) | Typing lag in long cards | Use updateDeco() instead of createDeco() for incremental decoration updates |
+| [#1111](bug-1111.md) | DnD glitch in narrow tabs | Make scroll trigger zones proportional to container size (20%, min 10px, max 35px) |
+
+### Commit: 3c08425 (2026-01-12)
+
+| Issue | Title | Fix |
+|-------|-------|-----|
+| [#1023](bug-1023.md) | CodeMirror measure loop errors | Delay posAtCoords() with requestAnimationFrame until DOM settles |
+| [#1067](bug-1067.md) | LaTeX expressions breaking cards | Restrict blockid parser to alphanumeric chars and hyphens |
+| [#1078](bug-1078.md) | iOS board converting to note | Add fallback to check kanbanFileModes when metadata cache unavailable |
+
+### Commit: 765d130 (2026-01-12)
+
+| Issue | Title | Fix |
+|-------|-------|-----|
+| [#754](bug-754.md) | Copy link to card doesn't scroll | Added ephemeral state for block refs, scroll-to-card with highlight |
+| [#870](bug-870.md) | Archive incorrectly includes non-complete tasks | Only archive items with [x] status, not all items in complete lanes |
+| [#802](bug-802.md) | Add card button off screen on mobile | Added CSS for proper flexbox layout on mobile |
 
 ### Commit: (pending) (2026-01-11)
 
