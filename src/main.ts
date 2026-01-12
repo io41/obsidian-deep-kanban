@@ -808,8 +808,14 @@ export default class KanbanPlugin extends Plugin {
             ) {
               // Then check for the kanban frontMatterKey
               const cache = self.app.metadataCache.getCache(state.state.file);
+              const cacheHasKanban = cache?.frontmatter && cache.frontmatter[frontmatterKey];
 
-              if (cache?.frontmatter && cache.frontmatter[frontmatterKey]) {
+              // Also check if we previously knew this was a kanban file
+              // This handles cases where the cache isn't populated yet (e.g., iOS returning from background)
+              const previouslyKnownKanban =
+                self.kanbanFileModes[state.state.file] === kanbanViewType;
+
+              if (cacheHasKanban || previouslyKnownKanban) {
                 // If we have it, force the view type to kanban
                 const newState = {
                   ...state,

@@ -291,12 +291,22 @@ export function MarkdownEditor({
     controller.editMode = editor;
     editor.set(value || '');
     if (isEditing(editState)) {
-      cm.dispatch({
-        userEvent: 'select.pointer',
-        selection: EditorSelection.single(cm.posAtCoords(editState, false)),
-      });
-
-      cm.dom.win.setTimeout(() => {
+      // Delay posAtCoords until after the DOM has settled to avoid
+      // CodeMirror "Measure loop restarted more than 5 times" errors
+      cm.dom.win.requestAnimationFrame(() => {
+        if (!internalRef.current) return; // Editor was unmounted
+        try {
+          cm.dispatch({
+            userEvent: 'select.pointer',
+            selection: EditorSelection.single(cm.posAtCoords(editState, false)),
+          });
+        } catch (e) {
+          // Fall back to end of document if posAtCoords fails
+          cm.dispatch({
+            userEvent: 'select.pointer',
+            selection: EditorSelection.cursor(cm.state.doc.length),
+          });
+        }
         setInsertMode(cm);
       });
     }
