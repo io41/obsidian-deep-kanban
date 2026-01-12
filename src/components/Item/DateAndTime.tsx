@@ -1,5 +1,6 @@
 import classcat from 'classcat';
 import { getLinkpath, moment } from 'obsidian';
+import { getDailyNoteSettings } from 'obsidian-daily-notes-interface';
 import { JSX, useEffect, useMemo, useState } from 'preact/compat';
 import { StateManager } from 'src/StateManager';
 import { t } from 'src/lang/helpers';
@@ -104,8 +105,12 @@ export function DateAndTime({
   const dateDisplayStr = targetDate.format(dateDisplayFormat);
   const timeDisplayStr = !hasTime ? null : targetDate.format(timeFormat);
 
-  const datePath = dateStr ? getLinkpath(dateStr) : null;
-  const isResolved = dateStr
+  // When linking to daily notes, use the Daily Notes plugin's date format for the link path
+  // This ensures clicking the date opens/creates the correct daily note
+  const dailyNoteFormat = shouldLinkDate ? getDailyNoteSettings().format || 'YYYY-MM-DD' : null;
+  const linkDateStr = dailyNoteFormat ? targetDate.format(dailyNoteFormat) : dateStr;
+  const datePath = linkDateStr ? getLinkpath(linkDateStr) : null;
+  const isResolved = datePath
     ? stateManager.app.metadataCache.getFirstLinkpathDest(datePath, filePath)
     : null;
   const date =

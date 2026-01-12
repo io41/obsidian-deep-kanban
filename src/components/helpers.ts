@@ -275,14 +275,18 @@ export function getTemplatePlugins(app: App) {
 }
 
 export function getTagColorFn(tagColors: TagColor[]) {
+  // Create a case-insensitive map for tag colors
   const tagMap = (tagColors || []).reduce<Record<string, TagColor>>((total, current) => {
     if (!current.tagKey) return total;
-    total[current.tagKey] = current;
+    // Store with lowercase key for case-insensitive matching
+    total[current.tagKey.toLowerCase()] = current;
     return total;
   }, {});
 
   return (tag: string) => {
-    if (tagMap[tag]) return tagMap[tag];
+    // Look up using lowercase for case-insensitive matching
+    const lowerTag = tag?.toLowerCase();
+    if (lowerTag && tagMap[lowerTag]) return tagMap[lowerTag];
     return null;
   };
 }
