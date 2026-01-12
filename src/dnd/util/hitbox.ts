@@ -61,23 +61,29 @@ export function calculateScrollHitbox(
 ): Hitbox {
   const hitbox = calculateHitbox(rect, scroll, scrollShift, null);
 
+  // Calculate scroll zone size based on container dimensions
+  // Use 35px by default, but scale down for narrow containers to prevent overlap
+  // Minimum zone size is 10px, maximum is 35px, and zones should not exceed 20% of dimension
+  const horizontalZone = Math.min(35, Math.max(10, rect.width * 0.2));
+  const verticalZone = Math.min(35, Math.max(10, rect.height * 0.2));
+
   if (side === 'top') {
-    hitbox[3] = hitbox[1] + 35;
+    hitbox[3] = hitbox[1] + verticalZone;
     return hitbox;
   }
 
   if (side === 'right') {
-    hitbox[0] = hitbox[0] + rect.width - 35;
+    hitbox[0] = hitbox[0] + rect.width - horizontalZone;
     return hitbox;
   }
 
   if (side === 'bottom') {
-    hitbox[1] = hitbox[1] + rect.height - 35;
+    hitbox[1] = hitbox[1] + rect.height - verticalZone;
     return hitbox;
   }
 
   // left
-  hitbox[2] = hitbox[0] + 35;
+  hitbox[2] = hitbox[0] + horizontalZone;
   return hitbox;
 }
 
