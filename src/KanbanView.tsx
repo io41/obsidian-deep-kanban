@@ -261,12 +261,24 @@ export class KanbanView extends TextFileView implements HoverParent {
 
   setEphemeralState(state: { subpath?: string }): void {
     if (state?.subpath) {
-      // Extract block ID from subpath (e.g., "#^blockid" -> "blockid")
-      const match = state.subpath.match(/^\^(.+)$/);
-      if (match) {
-        const blockId = match[1];
+      // Check for block ID (e.g., "^blockid")
+      const blockMatch = state.subpath.match(/^\^(.+)$/);
+      if (blockMatch) {
+        const blockId = blockMatch[1];
         // Emit event to scroll to the card with this blockId
         this.emitter.emit('scrollToBlock', blockId);
+        return;
+      }
+
+      // Check for heading link (e.g., "#Heading Name" or just "Heading Name")
+      // Obsidian outline sends subpaths like "Heading Name" (without #)
+      const headingText = state.subpath.startsWith('#')
+        ? state.subpath.slice(1)
+        : state.subpath;
+
+      if (headingText) {
+        // Emit event to scroll to the lane with this heading
+        this.emitter.emit('scrollToLane', headingText);
       }
     }
   }

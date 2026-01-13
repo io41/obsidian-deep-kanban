@@ -19,6 +19,8 @@ export function preprocessTitle(stateManager: StateManager, title: string) {
   const dateDisplayFormat = stateManager.getSetting('date-display-format');
   const timeTrigger = stateManager.getSetting('time-trigger');
   const timeFormat = stateManager.getSetting('time-format');
+  const moveDates = stateManager.getSetting('move-dates');
+  const moveTimes = stateManager.getSetting('move-dates'); // times follow same setting
 
   const { app } = stateManager;
 
@@ -44,6 +46,10 @@ export function preprocessTitle(stateManager: StateManager, title: string) {
       const parsed = moment(content, dateFormat);
       if (!parsed.isValid()) return match;
       date = parsed;
+      // When moveDates is true, hide inline dates (they show in the chip area instead)
+      if (moveDates) {
+        return space.trim() ? ' ' : '';
+      }
       const linkPath = app.metadataCache.getFirstLinkpathDest(content, stateManager.file.path);
       if (!dateColor) dateColor = getDateColor(parsed);
       const { wrapperClass, wrapperStyle } = getWrapperStyles(c('preview-date-wrapper'));
@@ -57,6 +63,10 @@ export function preprocessTitle(stateManager: StateManager, title: string) {
       const parsed = moment(content, dateFormat);
       if (!parsed.isValid()) return match;
       date = parsed;
+      // When moveDates is true, hide inline dates (they show in the chip area instead)
+      if (moveDates) {
+        return space.trim() ? ' ' : '';
+      }
       const linkPath = app.metadataCache.getFirstLinkpathDest(content, stateManager.file.path);
       if (!dateColor) dateColor = getDateColor(parsed);
       const { wrapperClass, wrapperStyle } = getWrapperStyles(c('preview-date-wrapper'));
@@ -70,6 +80,11 @@ export function preprocessTitle(stateManager: StateManager, title: string) {
       const parsed = moment(content, dateFormat);
       if (!parsed.isValid()) return match;
       date = parsed;
+      // When moveDates is true, hide inline dates (they show in the chip area instead)
+      // This handles cases where date deletion didn't work properly (#904)
+      if (moveDates) {
+        return space.trim() ? ' ' : '';
+      }
       if (!dateColor) dateColor = getDateColor(parsed);
       const { wrapperClass, wrapperStyle } = getWrapperStyles(c('preview-date-wrapper'));
       const currentIndex = dateIndex++;
@@ -82,6 +97,11 @@ export function preprocessTitle(stateManager: StateManager, title: string) {
     (match, space, content) => {
       const parsed = moment(content, timeFormat, true);
       if (!parsed.isValid()) return match;
+
+      // When moveDates/moveTimes is true, hide inline times (they show in the chip area instead)
+      if (moveTimes) {
+        return space.trim() ? ' ' : '';
+      }
 
       if (!date) {
         date = parsed;

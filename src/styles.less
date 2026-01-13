@@ -282,6 +282,12 @@ button.kanban-plugin__search-cancel-button .kanban-plugin__icon {
     height: 100%;
   }
 
+  // Fix gap when kanban is embedded in a callout (#783)
+  .callout-content & {
+    margin: calc(-1 * var(--callout-content-padding, 0.5rem));
+    width: calc(100% + 2 * var(--callout-content-padding, 0.5rem));
+  }
+
   &.kanban-plugin__vertical {
     > div {
       height: fit-content;
@@ -479,6 +485,12 @@ button.kanban-plugin__lane-action-add {
 
 .kanban-plugin__lane-title-text {
   flex-grow: 1;
+
+  // Fix grey lozenge appearing on short titles on macOS (#883)
+  // Reset any background that Obsidian might apply to inner wrapper divs
+  .markdown-preview-view > div {
+    background: transparent;
+  }
 }
 
 div.kanban-plugin__lane-title-count {
@@ -718,7 +730,9 @@ button.kanban-plugin__new-item-button {
 
 .kanban-plugin__item-title {
   width: 100%;
-  line-height: var(--line-height-tight);
+  // Use normal line-height to properly display CJK characters (#711)
+  // --line-height-tight can clip CJK text which needs more vertical space
+  line-height: var(--line-height-normal);
   margin-block-start: 1px;
 }
 
@@ -772,6 +786,17 @@ button.kanban-plugin__new-item-button {
       padding-block: var(--size-4-1);
       margin-block-start: var(--p-spacing);
       margin-block-end: var(--p-spacing);
+    }
+
+    // Fix callout icons not displaying in cards (#899, #655)
+    .callout-icon {
+      display: flex;
+      align-items: center;
+
+      svg {
+        width: var(--icon-size);
+        height: var(--icon-size);
+      }
     }
   }
 }
@@ -1143,6 +1168,18 @@ button.kanban-plugin__cancel-action-button {
   padding: 0;
   display: flex;
   flex-direction: column;
+
+  // Fix mobile settings modal positioning (#908)
+  .is-mobile & {
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    top: 0;
+    left: 0;
+    margin: 0;
+    border-radius: 0;
+  }
 }
 
 .modal.kanban-plugin__board-settings-modal .modal-content {
@@ -1152,6 +1189,12 @@ button.kanban-plugin__cancel-action-button {
   overflow-y: auto;
   overflow-x: hidden;
   margin: 0;
+
+  // Reduce padding on mobile (#908)
+  .is-mobile & {
+    padding-inline: 20px;
+    padding-block: 20px;
+  }
 }
 
 .kanban-plugin__board-settings-modal .setting-item {
@@ -1163,11 +1206,24 @@ button.kanban-plugin__cancel-action-button {
   max-width: 400px;
   min-width: 300px;
   width: 50%;
+
+  // Allow full width on mobile (#908)
+  .is-mobile & {
+    max-width: 100%;
+    min-width: 0;
+    width: 100%;
+  }
 }
 
 .kanban-plugin__board-settings-modal .setting-item-control {
   min-width: 300px;
   flex-shrink: 0;
+
+  // Allow full width on mobile (#908)
+  .is-mobile & {
+    min-width: 0;
+    width: 100%;
+  }
 }
 
 .kanban-plugin__board-settings-modal .choices {

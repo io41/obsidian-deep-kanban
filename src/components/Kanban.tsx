@@ -131,14 +131,52 @@ export const Kanban = ({ view, stateManager }: KanbanProps) => {
       }, 100);
     };
 
+    const scrollToLane = (headingText: string) => {
+      // Wait a short moment for the DOM to be ready
+      const win = view.getWindow();
+      win.setTimeout(() => {
+        // Find lane by matching title text (case-insensitive)
+        const normalizedHeading = headingText.toLowerCase().trim();
+        const laneEls = rootRef.current?.querySelectorAll(`.${c('lane')}`) || [];
+
+        for (const laneEl of laneEls) {
+          const titleEl = laneEl.querySelector(`.${c('lane-title-text')}`);
+          if (titleEl) {
+            const laneTitle = titleEl.textContent?.toLowerCase().trim() || '';
+            // Match by exact title or by title without max items suffix (e.g., "Todo (5)" -> "todo")
+            const baseLaneTitle = laneTitle.replace(/\s*\(\d+\)$/, '');
+            if (laneTitle === normalizedHeading || baseLaneTitle === normalizedHeading) {
+              // Scroll the lane into view
+              (laneEl as HTMLElement).scrollIntoView({
+                behavior: 'smooth',
+                block: 'start',
+                inline: 'center',
+              });
+              // Add highlight class to the lane header
+              const headerEl = laneEl.querySelector(`.${c('lane-header-wrapper')}`) as HTMLElement;
+              if (headerEl) {
+                headerEl.classList.add(c('highlight'));
+                win.setTimeout(() => {
+                  headerEl.classList.remove(c('highlight'));
+                }, 2000);
+              }
+              return;
+            }
+          }
+        }
+      }, 100);
+    };
+
     view.emitter.on('hotkey', onSearchHotkey);
     view.emitter.on('showLaneForm', showLaneForm);
     view.emitter.on('scrollToBlock', scrollToBlock);
+    view.emitter.on('scrollToLane', scrollToLane);
 
     return () => {
       view.emitter.off('hotkey', onSearchHotkey);
       view.emitter.off('showLaneForm', showLaneForm);
       view.emitter.off('scrollToBlock', scrollToBlock);
+      view.emitter.off('scrollToLane', scrollToLane);
     };
   }, [view]);
 

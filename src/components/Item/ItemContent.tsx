@@ -251,6 +251,11 @@ export const ItemContent = memo(function ItemContent({
       const target = e.target as HTMLElement;
 
       if (target.hasClass('task-list-item-checkbox')) {
+        // Prevent native checkbox toggle and event bubbling to avoid race conditions
+        // on mobile where touch events can cause checkbox/strikethrough mismatch (#876)
+        e.preventDefault();
+        e.stopPropagation();
+
         if (target.dataset.src) {
           return;
         }

@@ -10,11 +10,11 @@
 
 | Status | Count |
 |--------|-------|
-| Fixed | 78 |
-| Verified | 37 |
+| Fixed | 91 |
+| Verified | 22 |
 | Cannot Reproduce | 30 |
 | Won't Fix | 24 |
-| Needs Info | 18 |
+| Needs Info | 20 |
 | Duplicate | 15 |
 | Unverified | 0 |
 
@@ -44,6 +44,21 @@
 - `duplicate` - Duplicate of another issue
 
 ## Fixes Applied
+
+### Commit: (pending) (2026-01-12)
+
+| Issue | Title | Fix |
+|-------|-------|-----|
+| [#883](bug-883.md) | Grey lozenge on short titles | Add CSS to reset background on inner wrapper divs in lane titles |
+| [#899](bug-899.md) | Callout icons not displayed | Add CSS for .callout-icon display flex with proper SVG sizing |
+| [#655](bug-655.md) | Callout icons missing | Same fix as #899 |
+| [#904](bug-904.md) | Date showing both raw and chip | Hide inline dates/times in preprocessTitle when moveDates is true |
+| [#647](bug-647.md) | Markdown syntax not rendering | Tags/dates controlled by settings; highlight CSS already present |
+| [#711](bug-711.md) | CJK text cut-off in cards | Use --line-height-normal instead of --line-height-tight for item titles |
+| [#668](bug-668.md) | Checkbox cycle hotkey | Add Mod-l keybinding to cycle checkbox states in card editor |
+| [#908](bug-908.md) | Mobile settings positioning | Add mobile-specific CSS for full-screen modal on iOS |
+| [#783](bug-783.md) | Kanban in callout gap | Negative margin to compensate for callout padding |
+| [#876](bug-876.md) | Checkbox/strikethrough mismatch | Add preventDefault/stopPropagation to checkbox handler |
 
 ### Commit: 9ca8685 (2026-01-12)
 

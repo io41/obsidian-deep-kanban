@@ -265,6 +265,53 @@ export function MarkdownEditor({
                 },
                 preventDefault: true,
               },
+              {
+                // Cmd+L / Ctrl+L toggles checkbox status (cycle through states) (#668)
+                key: 'Mod-l',
+                run: (cm) => {
+                  const line = cm.state.doc.lineAt(cm.state.selection.main.head);
+                  const lineText = line.text;
+                  // Match checkbox pattern: optional leading whitespace, -, optional whitespace, [char]
+                  const checkboxMatch = lineText.match(/^(\s*-\s*)\[(.)\]/);
+                  if (checkboxMatch) {
+                    const prefix = checkboxMatch[1];
+                    const currentChar = checkboxMatch[2];
+                    // Cycle: space -> x -> - -> space
+                    let newChar: string;
+                    if (currentChar === ' ') newChar = 'x';
+                    else if (currentChar === 'x') newChar = '-';
+                    else newChar = ' ';
+                    const newText = `${prefix}[${newChar}]${lineText.slice(checkboxMatch[0].length)}`;
+                    cm.dispatch({
+                      changes: { from: line.from, to: line.to, insert: newText },
+                    });
+                  } else {
+                    // No checkbox found, add one at the start of the line (after any whitespace)
+                    const leadingWhitespace = lineText.match(/^(\s*)/)?.[1] || '';
+                    const restOfLine = lineText.slice(leadingWhitespace.length);
+                    // If line already starts with -, replace it with checkbox
+                    if (restOfLine.startsWith('- ')) {
+                      const newText = `${leadingWhitespace}- [ ] ${restOfLine.slice(2)}`;
+                      cm.dispatch({
+                        changes: { from: line.from, to: line.to, insert: newText },
+                      });
+                    } else if (restOfLine.startsWith('-')) {
+                      const newText = `${leadingWhitespace}- [ ] ${restOfLine.slice(1).trimStart()}`;
+                      cm.dispatch({
+                        changes: { from: line.from, to: line.to, insert: newText },
+                      });
+                    } else {
+                      // Add checkbox to plain text
+                      const newText = `${leadingWhitespace}- [ ] ${restOfLine}`;
+                      cm.dispatch({
+                        changes: { from: line.from, to: line.to, insert: newText },
+                      });
+                    }
+                  }
+                  return true;
+                },
+                preventDefault: true,
+              },
             ])
           )
         );
