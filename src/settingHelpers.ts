@@ -14,52 +14,45 @@ export const defaultMetadataPosition = 'body';
 const MAX_DROPDOWN_ITEMS = 500;
 
 export function getFolderChoices(app: App) {
-  const folderList: IChoices.Choice[] = [];
-  let limitReached = false;
+  const folders = app.vault
+    .getAllLoadedFiles()
+    .filter((file) => file instanceof TFolder) as TFolder[];
+  const limitReached = folders.length > MAX_DROPDOWN_ITEMS;
 
-  Vault.recurseChildren(app.vault.getRoot(), (f) => {
-    if (limitReached) return;
-    if (f instanceof TFolder) {
-      if (folderList.length >= MAX_DROPDOWN_ITEMS) {
-        limitReached = true;
-        return;
-      }
-      folderList.push({
-        value: f.path,
-        label: f.path,
-        selected: false,
-        disabled: false,
-      });
-    }
+  const folderList = folders.slice(0, MAX_DROPDOWN_ITEMS).map((folder) => {
+    return {
+      value: folder.path,
+      label: folder.path,
+      selected: false,
+      disabled: false,
+    };
   });
 
   return { choices: folderList, limitReached };
 }
 
 export function getTemplateChoices(app: App, folderStr?: string) {
-  const fileList: IChoices.Choice[] = [];
-  let limitReached = false;
-
   let folder = folderStr ? app.vault.getAbstractFileByPath(folderStr) : null;
 
   if (!folder || !(folder instanceof TFolder)) {
     folder = app.vault.getRoot();
   }
 
-  Vault.recurseChildren(folder as TFolder, (f) => {
-    if (limitReached) return;
-    if (f instanceof TFile) {
-      if (fileList.length >= MAX_DROPDOWN_ITEMS) {
-        limitReached = true;
-        return;
-      }
-      fileList.push({
-        value: f.path,
-        label: f.basename,
-        selected: false,
-        disabled: false,
-      });
-    }
+  const prefix = folder.path === '/' ? '' : `${folder.path}/`;
+  const files = app.vault
+    .getAllLoadedFiles()
+    .filter(
+      (file) => file instanceof TFile && (prefix === '' || file.path.startsWith(prefix))
+    ) as TFile[];
+  const limitReached = files.length > MAX_DROPDOWN_ITEMS;
+
+  const fileList = files.slice(0, MAX_DROPDOWN_ITEMS).map((file) => {
+    return {
+      value: file.path,
+      label: file.basename,
+      selected: false,
+      disabled: false,
+    };
   });
 
   return { choices: fileList, limitReached };
@@ -80,10 +73,14 @@ export function getListOptions(app: App) {
   // Add warning if limits were reached
   const limitWarnings: string[] = [];
   if (templateResult.limitReached) {
-    limitWarnings.push(t('Only first %1 templates shown. Use search to filter.', MAX_DROPDOWN_ITEMS.toString()));
+    limitWarnings.push(
+      t('Only first %1 templates shown. Use search to filter.', MAX_DROPDOWN_ITEMS.toString())
+    );
   }
   if (folderResult.limitReached) {
-    limitWarnings.push(t('Only first %1 folders shown. Use search to filter.', MAX_DROPDOWN_ITEMS.toString()));
+    limitWarnings.push(
+      t('Only first %1 folders shown. Use search to filter.', MAX_DROPDOWN_ITEMS.toString())
+    );
   }
 
   return {
@@ -185,7 +182,11 @@ export function createSearchSelect({
           choices: list,
         }).setChoiceByValue('');
 
-        if (value && typeof value === 'string' && (staleValueAdded || list.findIndex((f) => f.value === value) > -1)) {
+        if (
+          value &&
+          typeof value === 'string' &&
+          (staleValueAdded || list.findIndex((f) => f.value === value) > -1)
+        ) {
           c.setChoiceByValue(value);
         }
 

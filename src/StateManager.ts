@@ -6,6 +6,7 @@ import { KanbanView } from './KanbanView';
 import { KanbanSettings, SettingRetrievers } from './Settings';
 import { getDefaultDateFormat, getDefaultTimeFormat } from './components/helpers';
 import { Board, BoardTemplate, Item } from './components/types';
+import { hasNonKanbanContent } from './helpers';
 import { ListFormat } from './parsers/List';
 import { BaseFormat, frontmatterKey, shouldRefreshBoard } from './parsers/common';
 import { getTaskStatusDone } from './parsers/helpers/inlineMetadata';
@@ -24,6 +25,7 @@ export class StateManager {
   app: App;
   state: Board;
   file: TFile;
+  hasNonKanbanContent: boolean = false;
 
   parser: BaseFormat;
 
@@ -86,17 +88,40 @@ export class StateManager {
     };
   }
 
+  async updateNonKanbanContentFlag(file: TFile) {
+    this.hasNonKanbanContent = await hasNonKanbanContent(this.app, file);
+  }
+
+  ensureNonKanbanError() {
+    const existing = this.state?.data?.errors?.some((error) =>
+      error.description?.contains('non-list content')
+    );
+    if (!existing) {
+      this.setError(
+        new Error(
+          'Kanban detected non-list content in this file. Saving would discard it; open as markdown to preserve.'
+        )
+      );
+    }
+  }
+
   async newBoard(view: KanbanView, md: string) {
     try {
       const board = this.getParsedBoard(md);
       await view.prerender(board);
       this.setState(board, false);
+      await this.updateNonKanbanContentFlag(view.file);
     } catch (e) {
       this.setError(e);
     }
   }
 
   saveToDisk() {
+    if (this.hasNonKanbanContent) {
+      this.ensureNonKanbanError();
+      return;
+    }
+
     if (this.state.data.errors.length > 0) {
       return;
     }
@@ -367,6 +392,7 @@ export class StateManager {
   async reparseBoardFromMd() {
     try {
       this.setState(this.getParsedBoard(this.getAView().data), false);
+      await this.updateNonKanbanContentFlag(this.file);
     } catch (e) {
       console.error(e);
       this.setError(e);

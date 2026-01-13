@@ -100,6 +100,9 @@ export class DragManager {
       parseFloat(styles.marginBottom) || 0,
     ];
 
+    this.hitboxEntities.forEach((entity) => entity.recalcInitial());
+    this.scrollEntities.forEach((entity) => entity.recalcInitial());
+
     this.emitter.emit('dragStart', this.getDragEventData());
   }
 
@@ -114,17 +117,28 @@ export class DragManager {
     this.dragOriginHitbox = entity.getHitbox();
     this.dragEntityMargin = [0, 0, 0, 0];
 
+    this.hitboxEntities.forEach((entity) => entity.recalcInitial());
+    this.scrollEntities.forEach((entity) => entity.recalcInitial());
+
     this.emitter.emit('dragStart', this.getDragEventData());
   }
 
   dragMove(e: PointerEvent) {
-    this.dragPosition = { x: e.pageX, y: e.pageY };
+    const nextPosition = { x: e.pageX, y: e.pageY };
+    if (this.dragPosition && distanceBetween(this.dragPosition, nextPosition) < 1) {
+      return;
+    }
+    this.dragPosition = nextPosition;
     this.emitter.emit('dragMove', this.getDragEventData());
     this.calculateDragIntersect();
   }
 
   dragMoveHTML(e: DragEvent) {
-    this.dragPosition = { x: e.pageX, y: e.pageY };
+    const nextPosition = { x: e.pageX, y: e.pageY };
+    if (this.dragPosition && distanceBetween(this.dragPosition, nextPosition) < 1) {
+      return;
+    }
+    this.dragPosition = nextPosition;
     this.emitter.emit('dragMove', this.getDragEventData());
     this.calculateDragIntersect();
   }
@@ -183,10 +197,21 @@ export class DragManager {
     this.hitboxEntities.forEach((entity) => {
       const data = entity.getData();
 
-      if (win === data.win && (data.accepts.includes(type) || data.acceptsSort?.includes(type))) {
-        hitboxEntities.push(entity);
-        hitboxHitboxes.push(entity.getHitbox());
+      if (win !== data.win) {
+        return;
       }
+
+      if (!data.accepts.includes(type) && !data.acceptsSort?.includes(type)) {
+        return;
+      }
+
+      const dragScopeId = this.dragEntity?.scopeId;
+      if (dragScopeId && dragScopeId !== 'htmldnd' && entity.scopeId !== dragScopeId) {
+        return;
+      }
+
+      hitboxEntities.push(entity);
+      hitboxHitboxes.push(entity.getHitbox());
     });
 
     this.scrollEntities.forEach((entity) => {

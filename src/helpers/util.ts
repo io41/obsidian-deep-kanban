@@ -69,7 +69,14 @@ export class PromiseQueue {
 
       const now = performance.now();
       if (now - intervalStart > 50) {
-        await new Promise((res) => activeWindow.setTimeout(res));
+        await new Promise<void>((res) => {
+          const win = ((globalThis as any).activeWindow ?? window) as any;
+          if ('requestIdleCallback' in win) {
+            win.requestIdleCallback(() => res());
+          } else {
+            win.setTimeout(res);
+          }
+        });
         intervalStart = now;
       }
     }

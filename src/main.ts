@@ -17,7 +17,7 @@ import { KanbanSettings, KanbanSettingsTab } from './Settings';
 import { StateManager } from './StateManager';
 import { DateSuggest, TimeSuggest } from './components/Editor/suggest';
 import { getParentWindow } from './dnd/util/getWindow';
-import { hasFrontmatterKey, hasNonKanbanContent, KanbanConversionWarningModal } from './helpers';
+import { KanbanConversionWarningModal, hasFrontmatterKey, hasNonKanbanContent } from './helpers';
 import { t } from './lang/helpers';
 import { basicFrontmatter, frontmatterKey } from './parsers/common';
 
@@ -51,6 +51,7 @@ export default class KanbanPlugin extends Plugin {
 
   // leafid => view mode
   kanbanFileModes: Record<string, string> = {};
+  markdownViewStates: Map<string, ViewState['state']> = new Map();
   stateManagers: Map<TFile, StateManager> = new Map();
 
   windowRegistry: Map<Window, WindowRegistry> = new Map();
@@ -318,10 +319,14 @@ export default class KanbanPlugin extends Plugin {
   }
 
   async setMarkdownView(leaf: WorkspaceLeaf, focus: boolean = true) {
+    const leafId = (leaf as any).id;
+    const savedState = leafId ? this.markdownViewStates.get(leafId) : undefined;
+    const state = savedState ?? leaf.view.getState();
+
     await leaf.setViewState(
       {
         type: 'markdown',
-        state: leaf.view.getState(),
+        state,
         popstate: true,
       } as ViewState,
       { focus }
@@ -329,6 +334,13 @@ export default class KanbanPlugin extends Plugin {
   }
 
   async setKanbanView(leaf: WorkspaceLeaf) {
+    if (leaf.view instanceof MarkdownView) {
+      const leafId = (leaf as any).id;
+      if (leafId) {
+        this.markdownViewStates.set(leafId, leaf.view.getState());
+      }
+    }
+
     await leaf.setViewState({
       type: kanbanViewType,
       state: leaf.view.getState(),

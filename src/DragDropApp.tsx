@@ -206,6 +206,8 @@ export function DragDropApp({ win, plugin }: { win: Window; plugin: KanbanPlugin
           );
         }
 
+        stateManager.forceRefresh();
+
         return;
       }
 

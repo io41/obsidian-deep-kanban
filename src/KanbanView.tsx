@@ -18,7 +18,12 @@ import { BasicMarkdownRenderer } from './components/MarkdownRenderer/MarkdownRen
 import { c } from './components/helpers';
 import { Board } from './components/types';
 import { getParentWindow } from './dnd/util/getWindow';
-import { gotoNextDailyNote, gotoPrevDailyNote, hasFrontmatterKeyRaw } from './helpers';
+import {
+  gotoNextDailyNote,
+  gotoPrevDailyNote,
+  hasFrontmatterKey,
+  hasFrontmatterKeyRaw,
+} from './helpers';
 import { bindMarkdownEvents } from './helpers/renderMarkdown';
 import { PromiseQueue } from './helpers/util';
 import { t } from './lang/helpers';
@@ -225,6 +230,10 @@ export class KanbanView extends TextFileView implements HoverParent {
 
   setViewData(data: string, clear?: boolean) {
     if (!hasFrontmatterKeyRaw(data)) {
+      if (hasFrontmatterKey(this.file)) {
+        return;
+      }
+
       this.plugin.kanbanFileModes[(this.leaf as any).id || this.file.path] = 'markdown';
       this.plugin.removeView(this);
       this.plugin.setMarkdownView(this.leaf, false);
@@ -272,9 +281,7 @@ export class KanbanView extends TextFileView implements HoverParent {
 
       // Check for heading link (e.g., "#Heading Name" or just "Heading Name")
       // Obsidian outline sends subpaths like "Heading Name" (without #)
-      const headingText = state.subpath.startsWith('#')
-        ? state.subpath.slice(1)
-        : state.subpath;
+      const headingText = state.subpath.startsWith('#') ? state.subpath.slice(1) : state.subpath;
 
       if (headingText) {
         // Emit event to scroll to the lane with this heading

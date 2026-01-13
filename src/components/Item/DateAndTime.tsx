@@ -5,7 +5,7 @@ import { JSX, useEffect, useMemo, useState } from 'preact/compat';
 import { StateManager } from 'src/StateManager';
 import { t } from 'src/lang/helpers';
 
-import { c } from '../helpers';
+import { c, useGetDateColorFn } from '../helpers';
 import { DateColor, Item } from '../types';
 
 // Refresh interval for relative dates (1 minute)
@@ -42,6 +42,8 @@ interface DateProps {
 
 export function RelativeDate({ item, stateManager }: DateProps) {
   const shouldShowRelativeDate = stateManager.useSetting('show-relative-date');
+  const getDateColor = useGetDateColorFn(stateManager);
+  const targetDate = item.data.metadata.time ?? item.data.metadata.date;
   // State to trigger re-renders for updating relative dates
   const [, setTick] = useState(0);
 
@@ -58,13 +60,36 @@ export function RelativeDate({ item, stateManager }: DateProps) {
     return () => clearInterval(interval);
   }, [shouldShowRelativeDate, item.data.metadata.date]);
 
+  const dateColor = useMemo(() => {
+    if (!targetDate) return null;
+    return getDateColor(targetDate);
+  }, [getDateColor, targetDate]);
+
   if (!shouldShowRelativeDate || !item.data.metadata.date) {
     return null;
   }
 
   const relativeDate = getRelativeDate(item.data.metadata.date, item.data.metadata.time);
 
-  return <span className={c('item-metadata-date-relative')}>{relativeDate}</span>;
+  return (
+    <span
+      style={
+        dateColor && {
+          '--date-color': dateColor.color,
+          '--date-background-color': dateColor.backgroundColor,
+        }
+      }
+      className={classcat([
+        c('item-metadata-date-relative'),
+        c('date'),
+        {
+          'has-background': !!dateColor?.backgroundColor,
+        },
+      ])}
+    >
+      {relativeDate}
+    </span>
+  );
 }
 
 interface DateAndTimeProps {

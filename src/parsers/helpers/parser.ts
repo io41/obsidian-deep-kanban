@@ -55,8 +55,18 @@ export function replaceBrs(str: string) {
 }
 
 export function indentNewLines(str: string) {
-  const useTab = (app.vault as any).getConfig('useTab');
-  return str.trim().replace(/(?:\r\n|\n)/g, useTab ? '\n\t' : '\n    ');
+  const useTab = ((window as any).app?.vault as any)?.getConfig('useTab');
+  const indent = useTab ? '\t' : '    ';
+  const lines = str.trim().split(/\r?\n/);
+  const listIndent = /^(?:\t| {4})(?=(?:[-*+]|\d+\.)\s)/;
+
+  return lines
+    .map((line, index) => {
+      if (index === 0) return line;
+      const normalizedLine = listIndent.test(line) ? line.replace(/^(?:\t| {4})/, '') : line;
+      return `${indent}${normalizedLine}`;
+    })
+    .join('\n');
 }
 
 export function addBlockId(str: string, item: Item) {

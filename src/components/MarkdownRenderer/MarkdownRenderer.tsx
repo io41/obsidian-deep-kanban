@@ -67,6 +67,7 @@ export class BasicMarkdownRenderer extends Component {
   lastHeight = -1;
   lastRefWidth = -1;
   lastRefHeight = -1;
+  resizeFrame = 0;
 
   constructor(
     public view: KanbanView,
@@ -96,6 +97,8 @@ export class BasicMarkdownRenderer extends Component {
       this
     );
 
+    this.view.app.workspace.trigger('markdown-preview-render', this.containerEl);
+
     this.renderCapability.resolve();
     if (!(this.view as any)?._loaded || !(this as any)._loaded) return;
 
@@ -106,20 +109,25 @@ export class BasicMarkdownRenderer extends Component {
 
     this.observer = new ResizeObserver((entries) => {
       if (!entries.length) return;
+      if (this.resizeFrame) return;
 
-      const entry = entries.first().contentBoxSize[0];
-      if (entry.blockSize === 0) return;
+      const win = this.containerEl.win;
+      this.resizeFrame = win.requestAnimationFrame(() => {
+        this.resizeFrame = 0;
+        const entry = entries.first().contentBoxSize[0];
+        if (entry.blockSize === 0) return;
 
-      if (this.wrapperEl) {
-        const rect = this.wrapperEl.getBoundingClientRect();
-        if (this.lastRefHeight === -1 || rect.height > 0) {
-          this.lastRefHeight = rect.height;
-          this.lastRefWidth = rect.width;
+        if (this.wrapperEl) {
+          const rect = this.wrapperEl.getBoundingClientRect();
+          if (this.lastRefHeight === -1 || rect.height > 0) {
+            this.lastRefHeight = rect.height;
+            this.lastRefWidth = rect.width;
+          }
         }
-      }
 
-      this.lastWidth = entry.inlineSize;
-      this.lastHeight = entry.blockSize;
+        this.lastWidth = entry.inlineSize;
+        this.lastHeight = entry.blockSize;
+      });
     });
 
     containerEl.win.setTimeout(() => {

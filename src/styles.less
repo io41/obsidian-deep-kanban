@@ -699,6 +699,10 @@ button.kanban-plugin__new-item-button {
     0 0 0 2px hsla(var(--interactive-accent-hsl), 0.7);
 }
 
+.kanban-plugin__item-wrapper {
+  touch-action: none;
+}
+
 .kanban-plugin__item {
   font-size: 0.875rem;
   border: 1px solid var(--background-modifier-border);
@@ -710,6 +714,12 @@ button.kanban-plugin__new-item-button {
     outline: 1px solid var(--background-modifier-border-focus);
     border-color: var(--background-modifier-border-focus);
   }
+}
+
+.kanban-plugin__item a,
+.kanban-plugin__item img {
+  -webkit-user-drag: none;
+  user-drag: none;
 }
 
 .kanban-plugin__item-content-wrapper {
@@ -786,6 +796,10 @@ button.kanban-plugin__new-item-button {
       padding-block: var(--size-4-1);
       margin-block-start: var(--p-spacing);
       margin-block-end: var(--p-spacing);
+    }
+
+    .image-embed {
+      overflow: visible;
     }
 
     // Fix callout icons not displaying in cards (#899, #655)

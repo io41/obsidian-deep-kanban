@@ -171,7 +171,7 @@ export function bindMarkdownEvents(view: KanbanView) {
     evt.preventDefault();
     evt.stopPropagation();
 
-    const isNewPane = Keymap.isModEvent(evt);
+    const isNewPane = Keymap.isModEvent(evt) as any;
 
     // Try to handle as a daily note first (respects Daily Notes plugin settings)
     const handledAsDailyNote = await tryOpenAsDailyNote(view, link.href, isNewPane);
@@ -223,13 +223,25 @@ export function bindMarkdownEvents(view: KanbanView) {
     evt.preventDefault();
 
     if (!link.href || link.href.contains(' ')) return;
+
+    const windowsPath = /^[a-zA-Z]:[\\/]/.test(link.href) || /^\\\\/.test(link.href);
+    if (windowsPath) {
+      (app as any).openWithDefaultApp(link.href);
+      return;
+    }
+
+    if (link.href.startsWith('file://')) {
+      (app as any).openWithDefaultApp(decodeURIComponent(link.href.replace('file://', '')));
+      return;
+    }
+
     try {
       new URL(link.href);
     } catch (e) {
       return;
     }
 
-    const paneType = Keymap.isModEvent(evt);
+    const paneType = Keymap.isModEvent(evt) as any;
     const clickTarget = typeof paneType === 'boolean' ? '' : paneType;
     window.open(link.href, clickTarget);
   });

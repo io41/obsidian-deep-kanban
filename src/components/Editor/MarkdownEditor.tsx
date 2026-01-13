@@ -28,7 +28,7 @@ interface MarkdownEditorProps {
 }
 
 export function allowNewLine(stateManager: StateManager, mod: boolean, shift: boolean) {
-  return stateManager.getSetting('new-line-trigger') === 'enter' ? !(mod || shift) : mod || shift;
+  return stateManager.getSetting('new-line-trigger') === 'enter' ? !(mod || shift) : shift;
 }
 
 function getEditorAppProxy(view: KanbanView) {

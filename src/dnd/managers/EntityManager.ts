@@ -151,11 +151,38 @@ export class EntityManager {
 
   getEntity(rect: DOMRectReadOnly): Entity {
     const manager = this;
+    const minPlaceholderSize = 12;
+    const adjustPlaceholderRect = (input: DOMRectReadOnly): DOMRectReadOnly => {
+      const data = manager.getEntityData();
+      if (data.type !== 'placeholder') {
+        return input;
+      }
+
+      const axis = manager.sortManager?.axis;
+      if (axis === 'horizontal' && input.width < minPlaceholderSize) {
+        return {
+          ...input,
+          width: minPlaceholderSize,
+          right: input.left + minPlaceholderSize,
+        };
+      }
+
+      if (axis === 'vertical' && input.height < minPlaceholderSize) {
+        return {
+          ...input,
+          height: minPlaceholderSize,
+          bottom: input.top + minPlaceholderSize,
+        };
+      }
+
+      return input;
+    };
+
     return {
       scopeId: this.scopeId,
       entityId: this.entityId,
       initial: calculateHitbox(
-        rect,
+        adjustPlaceholderRect(rect),
         manager.scrollParent?.scrollState || initialScrollState,
         manager.scrollParent?.getScrollShift() || initialScrollShift,
         null
@@ -168,7 +195,7 @@ export class EntityManager {
       },
       recalcInitial() {
         this.initial = calculateHitbox(
-          manager.measureNode.getBoundingClientRect(),
+          adjustPlaceholderRect(manager.measureNode.getBoundingClientRect()),
           manager.scrollParent?.scrollState || initialScrollState,
           manager.scrollParent?.getScrollShift() || initialScrollShift,
           null
