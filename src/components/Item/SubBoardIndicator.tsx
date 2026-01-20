@@ -1,12 +1,12 @@
 import { TFile } from 'obsidian';
 import { memo, useCallback, useContext, useEffect, useState } from 'preact/compat';
-import { CountingSettings, SubBoardCache } from 'src/services/SubBoardCache';
 import { t } from 'src/lang/helpers';
+import { CountingSettings, SubBoardCache } from 'src/services/SubBoardCache';
 
-import { c } from '../helpers';
-import { KanbanContext } from '../context';
-import { SubBoardInfo } from '../types';
 import { Icon } from '../Icon/Icon';
+import { KanbanContext } from '../context';
+import { c } from '../helpers';
+import { SubBoardInfo } from '../types';
 
 interface SubBoardIndicatorProps {
   subBoard: SubBoardInfo;
@@ -49,7 +49,8 @@ export const SubBoardIndicator = memo(function SubBoardIndicator({
 
     const countUnchecked = stateManager.getSetting('sub-board-count-unchecked') !== false;
     const countNonArchived = stateManager.getSetting('sub-board-count-non-archived') !== false;
-    const countNonCompleteLane = stateManager.getSetting('sub-board-count-non-complete-lane') !== false;
+    const countNonCompleteLane =
+      stateManager.getSetting('sub-board-count-non-complete-lane') !== false;
 
     const settings: CountingSettings = {
       countUnchecked,
@@ -122,7 +123,7 @@ export const SubBoardIndicator = memo(function SubBoardIndicator({
     if (counts.open === 1) {
       return t('1 open');
     }
-    return t('${count} open').replace('${count}', counts.open.toString());
+    return t('{count} open').replace('{count}', counts.open.toString());
   };
 
   return (

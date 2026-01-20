@@ -34,7 +34,8 @@ const en = {
     'This file contains content that is not compatible with Kanban format (such as tables, images, code blocks, or other non-list content).',
   'Opening as a Kanban board will only preserve headings (as lanes) and list items (as cards). All other content will be permanently deleted.':
     'Opening as a Kanban board will only preserve headings (as lanes) and list items (as cards). All other content will be permanently deleted.',
-  'Consider backing up the file before proceeding.': 'Consider backing up the file before proceeding.',
+  'Consider backing up the file before proceeding.':
+    'Consider backing up the file before proceeding.',
   'Open as Kanban anyway': 'Open as Kanban anyway',
 
   // parser.ts
@@ -269,7 +270,7 @@ const en = {
   Missing: 'Missing',
   Circular: 'Circular',
   '1 open': '1 open',
-  '${count} open': '${count} open',
+  '{count} open': '{count} open',
 
   // components/Breadcrumb/Breadcrumb.tsx
   Parent: 'Parent',
