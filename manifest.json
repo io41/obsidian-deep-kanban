@@ -1,7 +1,7 @@
 {
   "id": "obsidian-deep-kanban",
   "name": "Deep Kanban",
-  "version": "3.0.0",
+  "version": "0.1.0",
   "minAppVersion": "1.0.0",
   "description": "Create nestable Kanban boards in Obsidian. Based on Kanban by mgmyers, with new features and bugfixes.",
   "author": "jgfaust",
