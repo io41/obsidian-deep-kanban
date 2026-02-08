@@ -28,6 +28,16 @@ const en = {
   'Are you sure you want to archive all completed cards on this board?':
     'Are you sure you want to archive all completed cards on this board?',
 
+  // Data loss warning
+  'Warning: Content may be lost': 'Warning: Content may be lost',
+  'This file contains content that is not compatible with Kanban format (such as tables, images, code blocks, or other non-list content).':
+    'This file contains content that is not compatible with Kanban format (such as tables, images, code blocks, or other non-list content).',
+  'Opening as a Kanban board will only preserve headings (as lanes) and list items (as cards). All other content will be permanently deleted.':
+    'Opening as a Kanban board will only preserve headings (as lanes) and list items (as cards). All other content will be permanently deleted.',
+  'Consider backing up the file before proceeding.':
+    'Consider backing up the file before proceeding.',
+  'Open as Kanban anyway': 'Open as Kanban anyway',
+
   // parser.ts
   Complete: 'Complete',
   Archive: 'Archive',
@@ -41,6 +51,7 @@ const en = {
     'Note: No template plugins are currently enabled.',
   default: 'default',
   'Search...': 'Search...',
+  'not found': 'not found',
 
   // Settings.ts
   'New line trigger': 'New line trigger',
@@ -166,6 +177,21 @@ const en = {
     'Set colors for dates displayed in cards based on the rules below.',
   'Add date color': 'Add date color',
 
+  // Sub-boards Settings
+  'Sub-boards': 'Sub-boards',
+  'Show sub-board summary': 'Show sub-board summary',
+  'When toggled, cards linking to other kanban boards will show a summary of open tasks.':
+    'When toggled, cards linking to other kanban boards will show a summary of open tasks.',
+  'Count unchecked cards': 'Count unchecked cards',
+  'Include unchecked cards ([ ]) in the sub-board open count.':
+    'Include unchecked cards ([ ]) in the sub-board open count.',
+  'Count non-archived cards': 'Count non-archived cards',
+  'Include cards not in the archive in the sub-board open count.':
+    'Include cards not in the archive in the sub-board open count.',
+  'Count cards not in complete lanes': 'Count cards not in complete lanes',
+  'Include cards not in lanes marked as complete in the sub-board open count.':
+    'Include cards not in lanes marked as complete in the sub-board open count.',
+
   // MetadataSettings.tsx
   'Metadata key': 'Metadata key',
   'Display label': 'Display label',
@@ -219,6 +245,7 @@ const en = {
   // components/Item/ItemMenu.ts
   'Edit card': 'Edit card',
   'New note from card': 'New note from card',
+  'Failed to create note: ': 'Failed to create note: ',
   'Archive card': 'Archive card',
   'Delete card': 'Delete card',
   'Edit date': 'Edit date',
@@ -236,6 +263,17 @@ const en = {
   'Move to top': 'Move to top',
   'Move to bottom': 'Move to bottom',
   'Move to list': 'Move to list',
+  'Open sub-board': 'Open sub-board',
+  'Create sub-board': 'Create sub-board',
+
+  // components/Item/SubBoardIndicator.tsx
+  Missing: 'Missing',
+  Circular: 'Circular',
+  '1 open': '1 open',
+  '{count} open': '{count} open',
+
+  // components/Breadcrumb/Breadcrumb.tsx
+  Parent: 'Parent',
 
   // components/Lane/LaneForm.tsx
   'Enter list title...': 'Enter list title...',

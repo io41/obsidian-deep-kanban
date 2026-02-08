@@ -53,7 +53,8 @@ const ItemInner = memo(function ItemInner({
 
   useEffect(() => {
     const handler = () => {
-      if (isEditing(editState)) setEditState(EditingState.cancel);
+      // Save edits (not cancel) when drag starts to prevent data loss
+      if (isEditing(editState)) setEditState(EditingState.complete);
     };
 
     dndManager.dragManager.emitter.on('dragStart', handler);
@@ -156,6 +157,7 @@ export const DraggableItem = memo(function DraggableItem(props: DraggableItemPro
         bindHandle(el);
       }}
       className={c('item-wrapper')}
+      data-block-id={innerProps.item.data.blockId}
     >
       <div ref={elementRef} className={classcat([c('item'), ...classModifiers])}>
         {props.isStatic ? (

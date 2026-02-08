@@ -14,6 +14,7 @@ import { t } from 'src/lang/helpers';
 import { DndScope } from '../dnd/components/Scope';
 import { getBoardModifiers } from '../helpers/boardModifiers';
 import { frontmatterKey } from '../parsers/common';
+import { Breadcrumb } from './Breadcrumb/Breadcrumb';
 import { Icon } from './Icon/Icon';
 import { Lanes } from './Lane/Lane';
 import { LaneForm } from './Lane/LaneForm';
@@ -112,12 +113,70 @@ export const Kanban = ({ view, stateManager }: KanbanProps) => {
       setIsLaneFormVisible(true);
     };
 
+    const scrollToBlock = (blockId: string) => {
+      // Wait a short moment for the DOM to be ready
+      const win = view.getWindow();
+      win.setTimeout(() => {
+        const cardEl = rootRef.current?.querySelector(`[data-block-id="${blockId}"]`) as HTMLElement;
+        if (cardEl) {
+          // Scroll the card into view
+          cardEl.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+          // Add highlight class
+          cardEl.classList.add(c('highlight'));
+          // Remove highlight after animation
+          win.setTimeout(() => {
+            cardEl.classList.remove(c('highlight'));
+          }, 2000);
+        }
+      }, 100);
+    };
+
+    const scrollToLane = (headingText: string) => {
+      // Wait a short moment for the DOM to be ready
+      const win = view.getWindow();
+      win.setTimeout(() => {
+        // Find lane by matching title text (case-insensitive)
+        const normalizedHeading = headingText.toLowerCase().trim();
+        const laneEls = rootRef.current?.querySelectorAll(`.${c('lane')}`) || [];
+
+        for (const laneEl of laneEls) {
+          const titleEl = laneEl.querySelector(`.${c('lane-title-text')}`);
+          if (titleEl) {
+            const laneTitle = titleEl.textContent?.toLowerCase().trim() || '';
+            // Match by exact title or by title without max items suffix (e.g., "Todo (5)" -> "todo")
+            const baseLaneTitle = laneTitle.replace(/\s*\(\d+\)$/, '');
+            if (laneTitle === normalizedHeading || baseLaneTitle === normalizedHeading) {
+              // Scroll the lane into view
+              (laneEl as HTMLElement).scrollIntoView({
+                behavior: 'smooth',
+                block: 'start',
+                inline: 'center',
+              });
+              // Add highlight class to the lane header
+              const headerEl = laneEl.querySelector(`.${c('lane-header-wrapper')}`) as HTMLElement;
+              if (headerEl) {
+                headerEl.classList.add(c('highlight'));
+                win.setTimeout(() => {
+                  headerEl.classList.remove(c('highlight'));
+                }, 2000);
+              }
+              return;
+            }
+          }
+        }
+      }, 100);
+    };
+
     view.emitter.on('hotkey', onSearchHotkey);
     view.emitter.on('showLaneForm', showLaneForm);
+    view.emitter.on('scrollToBlock', scrollToBlock);
+    view.emitter.on('scrollToLane', scrollToLane);
 
     return () => {
       view.emitter.off('hotkey', onSearchHotkey);
       view.emitter.off('showLaneForm', showLaneForm);
+      view.emitter.off('scrollToBlock', scrollToBlock);
+      view.emitter.off('scrollToLane', scrollToLane);
     };
   }, [view]);
 
@@ -178,6 +237,15 @@ export const Kanban = ({ view, stateManager }: KanbanProps) => {
 
   const html5DragHandlers = createHTMLDndHandlers(stateManager);
 
+  // Set this leaf as active when the board is clicked
+  // This ensures quick switcher recognizes the kanban pane as active
+  const handleBoardClick = useCallback(() => {
+    const leaf = view.leaf;
+    if (leaf && view.app.workspace.activeLeaf !== leaf) {
+      view.app.workspace.setActiveLeaf(leaf, { focus: false });
+    }
+  }, [view]);
+
   if (boardData === null || boardData === undefined)
     return (
       <div className={c('loading')}>
@@ -223,8 +291,15 @@ export const Kanban = ({ view, stateManager }: KanbanProps) => {
               },
               ...getCSSClass(boardData.data.frontmatter),
             ])}
+            onClick={handleBoardClick}
             {...html5DragHandlers}
           >
+            {boardData.data.frontmatter?.['kanban-parent-boards'] && (
+              <Breadcrumb
+                parentBoards={boardData.data.frontmatter['kanban-parent-boards']}
+                currentBoardPath={filePath}
+              />
+            )}
             {(isLaneFormVisible || boardData.children.length === 0) && (
               <LaneForm onNewLane={onNewLane} closeLaneForm={closeLaneForm} />
             )}

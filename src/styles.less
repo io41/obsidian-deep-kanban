@@ -5,10 +5,6 @@
   .view-content {
     padding: 0;
   }
-
-  > .view-header {
-    display: flex !important;
-  }
 }
 
 .kanban-plugin {
@@ -163,6 +159,15 @@
 
     .cm-scroller {
       overflow: visible;
+      // Override Typewriter Scroll plugin padding that causes huge vertical fields
+      padding-top: 0 !important;
+      padding-bottom: 0 !important;
+    }
+
+    .cm-content {
+      // Prevent Typewriter Scroll centering transforms
+      padding-top: 0 !important;
+      padding-bottom: 0 !important;
     }
   }
 }
@@ -277,6 +282,12 @@ button.kanban-plugin__search-cancel-button .kanban-plugin__icon {
     height: 100%;
   }
 
+  // Fix gap when kanban is embedded in a callout (#783)
+  .callout-content & {
+    margin: calc(-1 * var(--callout-content-padding, 0.5rem));
+    width: calc(100% + 2 * var(--callout-content-padding, 0.5rem));
+  }
+
   &.kanban-plugin__vertical {
     > div {
       height: fit-content;
@@ -314,6 +325,8 @@ button.kanban-plugin__search-cancel-button .kanban-plugin__icon {
   background-color: var(--background-secondary);
   border-radius: 6px;
   border: 1px solid var(--background-modifier-border);
+  min-height: 0; // Required for flex children to shrink properly on iOS Safari
+  overflow: hidden; // Contain children within lane bounds
 
   .is-dropping > & {
     background-color: hsla(var(--interactive-accent-hsl), 0.15);
@@ -411,16 +424,10 @@ button.kanban-plugin__lane-action-add {
   width: auto;
 
   .kanban-plugin__lane-header-wrapper {
-    writing-mode: vertical-lr;
-  }
-
-  .kanban-plugin__lane-header-wrapper {
+    // Use vertical-rl for proper CJK character orientation
+    // CJK characters display naturally, Latin rotates 90 degrees
+    writing-mode: vertical-rl;
     gap: var(--size-4-2);
-  }
-
-  .kanban-plugin__lane-title-count,
-  .kanban-plugin__lane-title-text {
-    transform: rotate(180deg);
   }
 
   .kanban-plugin__lane-settings-button-wrapper {
@@ -478,6 +485,12 @@ button.kanban-plugin__lane-action-add {
 
 .kanban-plugin__lane-title-text {
   flex-grow: 1;
+
+  // Fix grey lozenge appearing on short titles on macOS (#883)
+  // Reset any background that Obsidian might apply to inner wrapper divs
+  .markdown-preview-view > div {
+    background: transparent;
+  }
 }
 
 div.kanban-plugin__lane-title-count {
@@ -568,6 +581,8 @@ button.kanban-plugin__lane-settings-button + button.kanban-plugin__lane-settings
   margin-inline: 4px;
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-height: 0; // Needed for flex shrinking on iOS Safari
   > div {
     margin-block-start: 4px;
   }
@@ -684,17 +699,27 @@ button.kanban-plugin__new-item-button {
     0 0 0 2px hsla(var(--interactive-accent-hsl), 0.7);
 }
 
+.kanban-plugin__item-wrapper {
+  touch-action: none;
+}
+
 .kanban-plugin__item {
   font-size: 0.875rem;
   border: 1px solid var(--background-modifier-border);
   border-radius: var(--input-radius);
-  overflow: hidden;
+  overflow: visible;
   transition: 300ms opacity cubic-bezier(0.25, 1, 0.5, 1);
 
   &:has(.markdown-source-view) {
     outline: 1px solid var(--background-modifier-border-focus);
     border-color: var(--background-modifier-border-focus);
   }
+}
+
+.kanban-plugin__item a,
+.kanban-plugin__item img {
+  -webkit-user-drag: none;
+  user-drag: none;
 }
 
 .kanban-plugin__item-content-wrapper {
@@ -715,7 +740,9 @@ button.kanban-plugin__new-item-button {
 
 .kanban-plugin__item-title {
   width: 100%;
-  line-height: var(--line-height-tight);
+  // Use normal line-height to properly display CJK characters (#711)
+  // --line-height-tight can clip CJK text which needs more vertical space
+  line-height: var(--line-height-normal);
   margin-block-start: 1px;
 }
 
@@ -769,6 +796,21 @@ button.kanban-plugin__new-item-button {
       padding-block: var(--size-4-1);
       margin-block-start: var(--p-spacing);
       margin-block-end: var(--p-spacing);
+    }
+
+    .image-embed {
+      overflow: visible;
+    }
+
+    // Fix callout icons not displaying in cards (#899, #655)
+    .callout-icon {
+      display: flex;
+      align-items: center;
+
+      svg {
+        width: var(--icon-size);
+        height: var(--icon-size);
+      }
     }
   }
 }
@@ -1140,6 +1182,18 @@ button.kanban-plugin__cancel-action-button {
   padding: 0;
   display: flex;
   flex-direction: column;
+
+  // Fix mobile settings modal positioning (#908)
+  .is-mobile & {
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    top: 0;
+    left: 0;
+    margin: 0;
+    border-radius: 0;
+  }
 }
 
 .modal.kanban-plugin__board-settings-modal .modal-content {
@@ -1149,6 +1203,12 @@ button.kanban-plugin__cancel-action-button {
   overflow-y: auto;
   overflow-x: hidden;
   margin: 0;
+
+  // Reduce padding on mobile (#908)
+  .is-mobile & {
+    padding-inline: 20px;
+    padding-block: 20px;
+  }
 }
 
 .kanban-plugin__board-settings-modal .setting-item {
@@ -1160,11 +1220,24 @@ button.kanban-plugin__cancel-action-button {
   max-width: 400px;
   min-width: 300px;
   width: 50%;
+
+  // Allow full width on mobile (#908)
+  .is-mobile & {
+    max-width: 100%;
+    min-width: 0;
+    width: 100%;
+  }
 }
 
 .kanban-plugin__board-settings-modal .setting-item-control {
   min-width: 300px;
   flex-shrink: 0;
+
+  // Allow full width on mobile (#908)
+  .is-mobile & {
+    min-width: 0;
+    width: 100%;
+  }
 }
 
 .kanban-plugin__board-settings-modal .choices {
@@ -1677,6 +1750,7 @@ body:not(.native-scrollbars) .kanban-plugin__scroll-container::-webkit-scrollbar
 body:not(.native-scrollbars) .kanban-plugin__scroll-container::-webkit-scrollbar-thumb {
   border: 4px solid transparent;
   background-clip: content-box;
+  background-color: var(--scrollbar-thumb-bg, rgba(128, 128, 128, 0.5));
 }
 
 .kanban-plugin__scroll-container {
@@ -1781,4 +1855,111 @@ body:not(.native-scrollbars) .kanban-plugin__scroll-container::-webkit-scrollbar
   .kanban-plugin__date:hover {
     background-color: var(--date-background-color, rgba(var(--mono-rgb-100), 0.05));
   }
+}
+
+// Sub-board indicator
+.kanban-plugin__sub-board-indicator {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.kanban-plugin__sub-board-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: var(--radius-s);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--text-normal);
+    background-color: var(--background-modifier-hover);
+  }
+
+  .kanban-plugin__icon {
+    display: flex;
+  }
+}
+
+.kanban-plugin__sub-board-count {
+  line-height: 1;
+}
+
+// Breadcrumb navigation
+.kanban-plugin__breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background-color: var(--background-secondary);
+  border-bottom: 1px solid var(--background-modifier-border);
+  font-size: 13px;
+  color: var(--text-muted);
+
+  .kanban-plugin__icon {
+    display: flex;
+    color: var(--text-faint);
+  }
+}
+
+.kanban-plugin__breadcrumb-label {
+  color: var(--text-muted);
+}
+
+.kanban-plugin__breadcrumb-link {
+  color: var(--text-accent);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.kanban-plugin__breadcrumb-separator {
+  color: var(--text-faint);
+}
+
+// Card highlight animation for scroll-to-card (bug #754)
+.kanban-plugin__highlight {
+  animation: kanban-card-highlight 2s ease-out;
+}
+
+@keyframes kanban-card-highlight {
+  0% {
+    box-shadow: 0 0 0 3px var(--text-accent);
+    outline: 2px solid var(--text-accent);
+  }
+  50% {
+    box-shadow: 0 0 15px var(--text-accent);
+    outline: 2px solid var(--text-accent);
+  }
+  100% {
+    box-shadow: none;
+    outline: none;
+  }
+}
+
+// Mobile fix for add card button staying visible (bug #802)
+.is-mobile .kanban-plugin__lane {
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+
+  .kanban-plugin__lane-items {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+  }
+}
+
+.is-mobile .kanban-plugin__item-button-wrapper {
+  flex-shrink: 0;
+  position: sticky;
+  bottom: 0;
+  background: var(--background-secondary);
+  padding-top: 4px;
 }

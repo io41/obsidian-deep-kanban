@@ -67,6 +67,7 @@ export class BasicMarkdownRenderer extends Component {
   lastHeight = -1;
   lastRefWidth = -1;
   lastRefHeight = -1;
+  resizeFrame = 0;
 
   constructor(
     public view: KanbanView,
@@ -96,6 +97,8 @@ export class BasicMarkdownRenderer extends Component {
       this
     );
 
+    this.view.app.workspace.trigger('markdown-preview-render', this.containerEl);
+
     this.renderCapability.resolve();
     if (!(this.view as any)?._loaded || !(this as any)._loaded) return;
 
@@ -106,20 +109,25 @@ export class BasicMarkdownRenderer extends Component {
 
     this.observer = new ResizeObserver((entries) => {
       if (!entries.length) return;
+      if (this.resizeFrame) return;
 
-      const entry = entries.first().contentBoxSize[0];
-      if (entry.blockSize === 0) return;
+      const win = this.containerEl.win;
+      this.resizeFrame = win.requestAnimationFrame(() => {
+        this.resizeFrame = 0;
+        const entry = entries.first().contentBoxSize[0];
+        if (entry.blockSize === 0) return;
 
-      if (this.wrapperEl) {
-        const rect = this.wrapperEl.getBoundingClientRect();
-        if (this.lastRefHeight === -1 || rect.height > 0) {
-          this.lastRefHeight = rect.height;
-          this.lastRefWidth = rect.width;
+        if (this.wrapperEl) {
+          const rect = this.wrapperEl.getBoundingClientRect();
+          if (this.lastRefHeight === -1 || rect.height > 0) {
+            this.lastRefHeight = rect.height;
+            this.lastRefWidth = rect.width;
+          }
         }
-      }
 
-      this.lastWidth = entry.inlineSize;
-      this.lastHeight = entry.blockSize;
+        this.lastWidth = entry.inlineSize;
+        this.lastHeight = entry.blockSize;
+      });
     });
 
     containerEl.win.setTimeout(() => {
@@ -133,7 +141,10 @@ export class BasicMarkdownRenderer extends Component {
         if (
           targetNode.instanceOf(HTMLElement) &&
           targetNode.hasClass('task-list-item-checkbox') &&
-          !targetNode.closest('.markdown-embed')
+          !targetNode.closest('.markdown-embed') &&
+          // Allow Tasks/Dataview plugin checkboxes to work
+          !targetNode.closest('.dataview') &&
+          !targetNode.closest('.block-language-tasks')
         ) {
           evt.preventDefault();
           evt.stopPropagation();
@@ -146,13 +157,42 @@ export class BasicMarkdownRenderer extends Component {
       'contextmenu',
       (evt) => {
         const { targetNode } = evt;
-        if (targetNode.instanceOf(HTMLElement) && targetNode.hasClass('task-list-item-checkbox')) {
+        if (
+          targetNode.instanceOf(HTMLElement) &&
+          targetNode.hasClass('task-list-item-checkbox') &&
+          !targetNode.closest('.markdown-embed') &&
+          !targetNode.closest('.dataview') &&
+          !targetNode.closest('.block-language-tasks')
+        ) {
           evt.preventDefault();
           evt.stopPropagation();
         }
       },
       { capture: true }
     );
+
+    // Handle callout collapse/expand toggle
+    containerEl.addEventListener('click', (evt) => {
+      const { targetNode } = evt;
+      if (!targetNode.instanceOf(HTMLElement)) return;
+
+      // Check if click is on callout fold button or callout title (for collapsible callouts)
+      const foldButton = targetNode.closest('.callout-fold');
+      const calloutTitle = targetNode.closest('.callout-title');
+
+      if (foldButton || calloutTitle) {
+        const callout = targetNode.closest('.callout');
+        if (callout && callout.instanceOf(HTMLElement)) {
+          // Only toggle if it's a collapsible callout (has fold button)
+          const hasFold = callout.querySelector('.callout-fold');
+          if (hasFold) {
+            evt.preventDefault();
+            evt.stopPropagation();
+            callout.toggleClass('is-collapsed', !callout.hasClass('is-collapsed'));
+          }
+        }
+      }
+    });
   }
 
   migrate(el: HTMLElement) {

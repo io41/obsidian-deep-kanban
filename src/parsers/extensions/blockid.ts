@@ -59,6 +59,13 @@ export function blockidExtension(): Extension {
         return ok(code);
       }
 
+      // Block IDs can only contain alphanumeric characters and hyphens
+      // This prevents conflicts with LaTeX superscript syntax like $x^2$
+      const char = String.fromCharCode(code);
+      if (!/[a-zA-Z0-9-]/.test(char)) {
+        return nok(code);
+      }
+
       data = true;
       effects.consume(code);
 

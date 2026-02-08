@@ -103,9 +103,9 @@ class DateDecorator {
     this.decos = this.decorator.createDeco(view);
   }
   update(update: ViewUpdate) {
-    if (update.docChanged) {
-      this.decos = this.decorator.createDeco(update.view);
-    }
+    // Use updateDeco for incremental updates instead of recreating all decorations
+    // This significantly improves performance for large documents
+    this.decos = this.decorator.updateDeco(update, this.decos);
   }
 }
 

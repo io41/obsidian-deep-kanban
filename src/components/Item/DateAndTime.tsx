@@ -1,11 +1,15 @@
 import classcat from 'classcat';
 import { getLinkpath, moment } from 'obsidian';
-import { JSX, useMemo } from 'preact/compat';
+import { getDailyNoteSettings } from 'obsidian-daily-notes-interface';
+import { JSX, useEffect, useMemo, useState } from 'preact/compat';
 import { StateManager } from 'src/StateManager';
 import { t } from 'src/lang/helpers';
 
-import { c } from '../helpers';
+import { c, useGetDateColorFn } from '../helpers';
 import { DateColor, Item } from '../types';
+
+// Refresh interval for relative dates (1 minute)
+const RELATIVE_DATE_REFRESH_INTERVAL = 60 * 1000;
 
 export function getRelativeDate(date: moment.Moment, time: moment.Moment) {
   if (time) {
@@ -38,6 +42,28 @@ interface DateProps {
 
 export function RelativeDate({ item, stateManager }: DateProps) {
   const shouldShowRelativeDate = stateManager.useSetting('show-relative-date');
+  const getDateColor = useGetDateColorFn(stateManager);
+  const targetDate = item.data.metadata.time ?? item.data.metadata.date;
+  // State to trigger re-renders for updating relative dates
+  const [, setTick] = useState(0);
+
+  useEffect(() => {
+    if (!shouldShowRelativeDate || !item.data.metadata.date) {
+      return;
+    }
+
+    // Set up interval to refresh relative date display
+    const interval = setInterval(() => {
+      setTick((t) => t + 1);
+    }, RELATIVE_DATE_REFRESH_INTERVAL);
+
+    return () => clearInterval(interval);
+  }, [shouldShowRelativeDate, item.data.metadata.date]);
+
+  const dateColor = useMemo(() => {
+    if (!targetDate) return null;
+    return getDateColor(targetDate);
+  }, [getDateColor, targetDate]);
 
   if (!shouldShowRelativeDate || !item.data.metadata.date) {
     return null;
@@ -45,7 +71,25 @@ export function RelativeDate({ item, stateManager }: DateProps) {
 
   const relativeDate = getRelativeDate(item.data.metadata.date, item.data.metadata.time);
 
-  return <span className={c('item-metadata-date-relative')}>{relativeDate}</span>;
+  return (
+    <span
+      style={
+        dateColor && {
+          '--date-color': dateColor.color,
+          '--date-background-color': dateColor.backgroundColor,
+        }
+      }
+      className={classcat([
+        c('item-metadata-date-relative'),
+        c('date'),
+        {
+          'has-background': !!dateColor?.backgroundColor,
+        },
+      ])}
+    >
+      {relativeDate}
+    </span>
+  );
 }
 
 interface DateAndTimeProps {
@@ -86,8 +130,12 @@ export function DateAndTime({
   const dateDisplayStr = targetDate.format(dateDisplayFormat);
   const timeDisplayStr = !hasTime ? null : targetDate.format(timeFormat);
 
-  const datePath = dateStr ? getLinkpath(dateStr) : null;
-  const isResolved = dateStr
+  // When linking to daily notes, use the Daily Notes plugin's date format for the link path
+  // This ensures clicking the date opens/creates the correct daily note
+  const dailyNoteFormat = shouldLinkDate ? getDailyNoteSettings().format || 'YYYY-MM-DD' : null;
+  const linkDateStr = dailyNoteFormat ? targetDate.format(dailyNoteFormat) : dateStr;
+  const datePath = linkDateStr ? getLinkpath(linkDateStr) : null;
+  const isResolved = datePath
     ? stateManager.app.metadataCache.getFirstLinkpathDest(datePath, filePath)
     : null;
   const date =

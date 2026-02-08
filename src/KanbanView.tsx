@@ -18,7 +18,12 @@ import { BasicMarkdownRenderer } from './components/MarkdownRenderer/MarkdownRen
 import { c } from './components/helpers';
 import { Board } from './components/types';
 import { getParentWindow } from './dnd/util/getWindow';
-import { gotoNextDailyNote, gotoPrevDailyNote, hasFrontmatterKeyRaw } from './helpers';
+import {
+  gotoNextDailyNote,
+  gotoPrevDailyNote,
+  hasFrontmatterKey,
+  hasFrontmatterKeyRaw,
+} from './helpers';
 import { bindMarkdownEvents } from './helpers/renderMarkdown';
 import { PromiseQueue } from './helpers/util';
 import { t } from './lang/helpers';
@@ -149,7 +154,12 @@ export class KanbanView extends TextFileView implements HoverParent {
   }
 
   async loadFile(file: TFile) {
-    this.plugin.removeView(this);
+    // Only remove the view if we're loading a different file
+    // This prevents the view from becoming blank when Quick Switcher
+    // or URI "re-opens" the same file that's already active
+    if (this.file?.path !== file.path) {
+      this.plugin.removeView(this);
+    }
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     return super.loadFile(file);
@@ -220,6 +230,10 @@ export class KanbanView extends TextFileView implements HoverParent {
 
   setViewData(data: string, clear?: boolean) {
     if (!hasFrontmatterKeyRaw(data)) {
+      if (hasFrontmatterKey(this.file)) {
+        return;
+      }
+
       this.plugin.kanbanFileModes[(this.leaf as any).id || this.file.path] = 'markdown';
       this.plugin.removeView(this);
       this.plugin.setMarkdownView(this.leaf, false);
@@ -248,6 +262,32 @@ export class KanbanView extends TextFileView implements HoverParent {
     const state = super.getState();
     state.kanbanViewState = { ...this.viewSettings };
     return state;
+  }
+
+  getEphemeralState(): { subpath?: string } {
+    return {};
+  }
+
+  setEphemeralState(state: { subpath?: string }): void {
+    if (state?.subpath) {
+      // Check for block ID (e.g., "^blockid")
+      const blockMatch = state.subpath.match(/^\^(.+)$/);
+      if (blockMatch) {
+        const blockId = blockMatch[1];
+        // Emit event to scroll to the card with this blockId
+        this.emitter.emit('scrollToBlock', blockId);
+        return;
+      }
+
+      // Check for heading link (e.g., "#Heading Name" or just "Heading Name")
+      // Obsidian outline sends subpaths like "Heading Name" (without #)
+      const headingText = state.subpath.startsWith('#') ? state.subpath.slice(1) : state.subpath;
+
+      if (headingText) {
+        // Emit event to scroll to the lane with this heading
+        this.emitter.emit('scrollToLane', headingText);
+      }
+    }
   }
 
   setViewState<K extends keyof KanbanViewSettings>(

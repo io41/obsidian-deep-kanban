@@ -10,51 +10,59 @@ export const defaultDateTrigger = '@';
 export const defaultTimeTrigger = '@@';
 export const defaultMetadataPosition = 'body';
 
-export function getFolderChoices(app: App) {
-  const folderList: IChoices.Choice[] = [];
+// Maximum number of items to show in dropdowns to prevent UI freeze on large vaults
+const MAX_DROPDOWN_ITEMS = 500;
 
-  Vault.recurseChildren(app.vault.getRoot(), (f) => {
-    if (f instanceof TFolder) {
-      folderList.push({
-        value: f.path,
-        label: f.path,
-        selected: false,
-        disabled: false,
-      });
-    }
+export function getFolderChoices(app: App) {
+  const folders = app.vault
+    .getAllLoadedFiles()
+    .filter((file) => file instanceof TFolder) as TFolder[];
+  const limitReached = folders.length > MAX_DROPDOWN_ITEMS;
+
+  const folderList = folders.slice(0, MAX_DROPDOWN_ITEMS).map((folder) => {
+    return {
+      value: folder.path,
+      label: folder.path,
+      selected: false,
+      disabled: false,
+    };
   });
 
-  return folderList;
+  return { choices: folderList, limitReached };
 }
 
 export function getTemplateChoices(app: App, folderStr?: string) {
-  const fileList: IChoices.Choice[] = [];
-
   let folder = folderStr ? app.vault.getAbstractFileByPath(folderStr) : null;
 
   if (!folder || !(folder instanceof TFolder)) {
     folder = app.vault.getRoot();
   }
 
-  Vault.recurseChildren(folder as TFolder, (f) => {
-    if (f instanceof TFile) {
-      fileList.push({
-        value: f.path,
-        label: f.basename,
-        selected: false,
-        disabled: false,
-      });
-    }
+  const prefix = folder.path === '/' ? '' : `${folder.path}/`;
+  const files = app.vault
+    .getAllLoadedFiles()
+    .filter(
+      (file) => file instanceof TFile && (prefix === '' || file.path.startsWith(prefix))
+    ) as TFile[];
+  const limitReached = files.length > MAX_DROPDOWN_ITEMS;
+
+  const fileList = files.slice(0, MAX_DROPDOWN_ITEMS).map((file) => {
+    return {
+      value: file.path,
+      label: file.basename,
+      selected: false,
+      disabled: false,
+    };
   });
 
-  return fileList;
+  return { choices: fileList, limitReached };
 }
 
 export function getListOptions(app: App) {
   const { templateFolder, templatesEnabled, templaterPlugin } = getTemplatePlugins(app);
 
-  const templateFiles = getTemplateChoices(app, templateFolder);
-  const vaultFolders = getFolderChoices(app);
+  const templateResult = getTemplateChoices(app, templateFolder);
+  const folderResult = getFolderChoices(app);
 
   let templateWarning = '';
 
@@ -62,10 +70,24 @@ export function getListOptions(app: App) {
     templateWarning = t('Note: No template plugins are currently enabled.');
   }
 
+  // Add warning if limits were reached
+  const limitWarnings: string[] = [];
+  if (templateResult.limitReached) {
+    limitWarnings.push(
+      t('Only first %1 templates shown. Use search to filter.', MAX_DROPDOWN_ITEMS.toString())
+    );
+  }
+  if (folderResult.limitReached) {
+    limitWarnings.push(
+      t('Only first %1 folders shown. Use search to filter.', MAX_DROPDOWN_ITEMS.toString())
+    );
+  }
+
   return {
-    templateFiles,
-    vaultFolders,
+    templateFiles: templateResult.choices,
+    vaultFolders: folderResult.choices,
     templateWarning,
+    limitWarnings,
   };
 }
 
@@ -135,6 +157,23 @@ export function createSearchSelect({
           });
         }
 
+        // If we have a stored value that doesn't exist in the list (e.g., folder was moved/deleted),
+        // add it to the dropdown so users can see what was configured and change it
+        let staleValueAdded = false;
+        if (value && typeof value === 'string' && list.findIndex((f) => f.value === value) === -1) {
+          staleValueAdded = true;
+          list = update(list, {
+            $push: [
+              {
+                value: value,
+                label: `${value} (${t('not found')})`,
+                selected: false,
+                disabled: false,
+              },
+            ],
+          });
+        }
+
         const c = new Choices(el, {
           placeholder: true,
           position: 'bottom' as 'auto',
@@ -143,7 +182,11 @@ export function createSearchSelect({
           choices: list,
         }).setChoiceByValue('');
 
-        if (value && typeof value === 'string' && list.findIndex((f) => f.value === value) > -1) {
+        if (
+          value &&
+          typeof value === 'string' &&
+          (staleValueAdded || list.findIndex((f) => f.value === value) > -1)
+        ) {
           c.setChoiceByValue(value);
         }
 

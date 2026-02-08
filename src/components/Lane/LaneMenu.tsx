@@ -328,7 +328,9 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
       }
     };
 
-    if (Platform.isPhone) {
+    // Use flat menu structure on mobile (phones and tablets) since hover-based
+    // submenus don't work reliably on touch devices like iPad
+    if (Platform.isMobile) {
       addSortOptions(menu);
     } else {
       menu.addItem((item) => {

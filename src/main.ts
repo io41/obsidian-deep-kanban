@@ -17,7 +17,7 @@ import { KanbanSettings, KanbanSettingsTab } from './Settings';
 import { StateManager } from './StateManager';
 import { DateSuggest, TimeSuggest } from './components/Editor/suggest';
 import { getParentWindow } from './dnd/util/getWindow';
-import { hasFrontmatterKey } from './helpers';
+import { KanbanConversionWarningModal, hasFrontmatterKey, hasNonKanbanContent } from './helpers';
 import { t } from './lang/helpers';
 import { basicFrontmatter, frontmatterKey } from './parsers/common';
 
@@ -51,6 +51,7 @@ export default class KanbanPlugin extends Plugin {
 
   // leafid => view mode
   kanbanFileModes: Record<string, string> = {};
+  markdownViewStates: Map<string, ViewState['state']> = new Map();
   stateManagers: Map<TFile, StateManager> = new Map();
 
   windowRegistry: Map<Window, WindowRegistry> = new Map();
@@ -318,10 +319,14 @@ export default class KanbanPlugin extends Plugin {
   }
 
   async setMarkdownView(leaf: WorkspaceLeaf, focus: boolean = true) {
+    const leafId = (leaf as any).id;
+    const savedState = leafId ? this.markdownViewStates.get(leafId) : undefined;
+    const state = savedState ?? leaf.view.getState();
+
     await leaf.setViewState(
       {
         type: 'markdown',
-        state: leaf.view.getState(),
+        state,
         popstate: true,
       } as ViewState,
       { focus }
@@ -329,6 +334,13 @@ export default class KanbanPlugin extends Plugin {
   }
 
   async setKanbanView(leaf: WorkspaceLeaf) {
+    if (leaf.view instanceof MarkdownView) {
+      const leafId = (leaf as any).id;
+      if (leafId) {
+        this.markdownViewStates.set(leafId, leaf.view.getState());
+      }
+    }
+
     await leaf.setViewState({
       type: kanbanViewType,
       state: leaf.view.getState(),
@@ -403,7 +415,14 @@ export default class KanbanPlugin extends Plugin {
                 .setTitle(t('Open as kanban board'))
                 .setIcon(kanbanIcon)
                 .setSection('pane')
-                .onClick(() => {
+                .onClick(async () => {
+                  // Check if file contains content that would be lost
+                  if (await hasNonKanbanContent(this.app, file)) {
+                    const modal = new KanbanConversionWarningModal(this.app);
+                    modal.open();
+                    const proceed = await modal.waitForResult();
+                    if (!proceed) return;
+                  }
                   this.kanbanFileModes[(leaf as any).id || file.path] = kanbanViewType;
                   this.setKanbanView(leaf);
                 });
@@ -424,7 +443,14 @@ export default class KanbanPlugin extends Plugin {
               .setTitle(t('Open as kanban board'))
               .setIcon(kanbanIcon)
               .setSection('pane')
-              .onClick(() => {
+              .onClick(async () => {
+                // Check if file contains content that would be lost
+                if (await hasNonKanbanContent(this.app, file)) {
+                  const modal = new KanbanConversionWarningModal(this.app);
+                  modal.open();
+                  const proceed = await modal.waitForResult();
+                  if (!proceed) return;
+                }
                 this.kanbanFileModes[(leaf as any).id || file.path] = kanbanViewType;
                 this.setKanbanView(leaf);
               });
@@ -521,7 +547,11 @@ export default class KanbanPlugin extends Plugin {
         const kanbanLeaves = app.workspace.getLeavesOfType(kanbanViewType);
 
         kanbanLeaves.forEach((leaf) => {
-          (leaf.view as KanbanView).handleRename(file.path, oldPath);
+          // Check if view is fully initialized and has handleRename
+          const view = leaf.view;
+          if (view && typeof (view as any).handleRename === 'function') {
+            (view as KanbanView).handleRename(file.path, oldPath);
+          }
         });
       })
     );
@@ -790,8 +820,14 @@ export default class KanbanPlugin extends Plugin {
             ) {
               // Then check for the kanban frontMatterKey
               const cache = self.app.metadataCache.getCache(state.state.file);
+              const cacheHasKanban = cache?.frontmatter && cache.frontmatter[frontmatterKey];
 
-              if (cache?.frontmatter && cache.frontmatter[frontmatterKey]) {
+              // Also check if we previously knew this was a kanban file
+              // This handles cases where the cache isn't populated yet (e.g., iOS returning from background)
+              const previouslyKnownKanban =
+                self.kanbanFileModes[state.state.file] === kanbanViewType;
+
+              if (cacheHasKanban || previouslyKnownKanban) {
                 // If we have it, force the view type to kanban
                 const newState = {
                   ...state,

@@ -3,6 +3,7 @@ import {
   getCoreRowModel,
   getFilteredRowModel,
   getSortedRowModel,
+  Header,
   useReactTable,
 } from '@tanstack/react-table';
 import classcat from 'classcat';
@@ -16,6 +17,59 @@ import { IntersectionObserverContext } from '../context';
 import { c } from '../helpers';
 import { Board } from '../types';
 import { fuzzyAnyFilter, useTableColumns } from './helpers';
+
+/**
+ * Creates a resize handler that works in popout windows.
+ * The default tanstack-table handler uses `document` directly which doesn't work
+ * when the table is in a separate window (the events fire on a different document).
+ */
+function createPopoutSafeResizeHandler(header: Header<any, unknown>) {
+  return (e: MouseEvent | TouchEvent) => {
+    // Get the document from the event's view (window) - this ensures we use
+    // the correct document in popout windows
+    const doc = (e.view as Window)?.document || document;
+
+    // Call the original handler to set up initial state
+    const originalHandler = header.getResizeHandler();
+    originalHandler(e);
+
+    // The original handler attaches listeners to the wrong document in popout windows.
+    // We need to add our own listeners to the correct document.
+    const column = header.column;
+    const table = header.getContext().table;
+
+    const clientXPos = 'touches' in e ? e.touches[0]?.clientX : e.clientX;
+    const startSize = column.getSize();
+    const startOffset = clientXPos;
+    const isRtl = table.options.columnResizeDirection === 'rtl';
+
+    const updateOffset = (clientX: number) => {
+      const deltaOffset = clientX - startOffset;
+      const deltaDirection = isRtl ? -1 : 1;
+      const newSize = Math.max(startSize + deltaOffset * deltaDirection, 50);
+      column.setSize?.(newSize);
+    };
+
+    const onMove = (moveEvent: MouseEvent | TouchEvent) => {
+      const clientX = 'touches' in moveEvent ? moveEvent.touches[0]?.clientX : moveEvent.clientX;
+      if (clientX !== undefined) {
+        updateOffset(clientX);
+      }
+    };
+
+    const onEnd = () => {
+      doc.removeEventListener('mousemove', onMove);
+      doc.removeEventListener('mouseup', onEnd);
+      doc.removeEventListener('touchmove', onMove);
+      doc.removeEventListener('touchend', onEnd);
+    };
+
+    doc.addEventListener('mousemove', onMove);
+    doc.addEventListener('mouseup', onEnd);
+    doc.addEventListener('touchmove', onMove);
+    doc.addEventListener('touchend', onEnd);
+  };
+}
 
 function useIntersectionObserver() {
   const observerRef = useRef<IntersectionObserver>();
@@ -180,8 +234,8 @@ export function TableView({
                         <div
                           {...{
                             onDoubleClick: () => header.column.resetSize(),
-                            onMouseDown: header.getResizeHandler(),
-                            onTouchStart: header.getResizeHandler(),
+                            onMouseDown: createPopoutSafeResizeHandler(header),
+                            onTouchStart: createPopoutSafeResizeHandler(header),
                             className: `resizer ${table.options.columnResizeDirection} ${
                               header.column.getIsResizing() ? 'isResizing' : ''
                             }`,

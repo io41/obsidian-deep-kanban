@@ -6,6 +6,7 @@ import { KanbanView } from './KanbanView';
 import { KanbanSettings, SettingRetrievers } from './Settings';
 import { getDefaultDateFormat, getDefaultTimeFormat } from './components/helpers';
 import { Board, BoardTemplate, Item } from './components/types';
+import { hasNonKanbanContent } from './helpers';
 import { ListFormat } from './parsers/List';
 import { BaseFormat, frontmatterKey, shouldRefreshBoard } from './parsers/common';
 import { getTaskStatusDone } from './parsers/helpers/inlineMetadata';
@@ -24,6 +25,7 @@ export class StateManager {
   app: App;
   state: Board;
   file: TFile;
+  hasNonKanbanContent: boolean = false;
 
   parser: BaseFormat;
 
@@ -86,17 +88,40 @@ export class StateManager {
     };
   }
 
+  async updateNonKanbanContentFlag(file: TFile) {
+    this.hasNonKanbanContent = await hasNonKanbanContent(this.app, file);
+  }
+
+  ensureNonKanbanError() {
+    const existing = this.state?.data?.errors?.some((error) =>
+      error.description?.contains('non-list content')
+    );
+    if (!existing) {
+      this.setError(
+        new Error(
+          'Kanban detected non-list content in this file. Saving would discard it; open as markdown to preserve.'
+        )
+      );
+    }
+  }
+
   async newBoard(view: KanbanView, md: string) {
     try {
       const board = this.getParsedBoard(md);
       await view.prerender(board);
       this.setState(board, false);
+      await this.updateNonKanbanContentFlag(view.file);
     } catch (e) {
       this.setError(e);
     }
   }
 
   saveToDisk() {
+    if (this.hasNonKanbanContent) {
+      this.ensureNonKanbanError();
+      return;
+    }
+
     if (this.state.data.errors.length > 0) {
       return;
     }
@@ -254,10 +279,21 @@ export class StateManager {
       'show-board-settings': this.getSettingRaw('show-board-settings', suppliedSettings) ?? true,
       'show-search': this.getSettingRaw('show-search', suppliedSettings) ?? true,
       'show-set-view': this.getSettingRaw('show-set-view', suppliedSettings) ?? true,
-      'tag-colors': this.getSettingRaw('tag-colors', suppliedSettings) ?? [],
-      'tag-sort': this.getSettingRaw('tag-sort', suppliedSettings) ?? [],
-      'date-colors': this.getSettingRaw('date-colors', suppliedSettings) ?? [],
+      // For array settings, fall back to global if local is empty or undefined
+      'tag-colors':
+        (this.getSettingRaw('tag-colors', suppliedSettings) as any[])?.length > 0
+          ? this.getSettingRaw('tag-colors', suppliedSettings)
+          : this.getGlobalSetting('tag-colors') ?? [],
+      'tag-sort':
+        (this.getSettingRaw('tag-sort', suppliedSettings) as any[])?.length > 0
+          ? this.getSettingRaw('tag-sort', suppliedSettings)
+          : this.getGlobalSetting('tag-sort') ?? [],
+      'date-colors':
+        (this.getSettingRaw('date-colors', suppliedSettings) as any[])?.length > 0
+          ? this.getSettingRaw('date-colors', suppliedSettings)
+          : this.getGlobalSetting('date-colors') ?? [],
       'tag-action': this.getSettingRaw('tag-action', suppliedSettings) ?? 'obsidian',
+      'max-archive-size': this.getSettingRaw('max-archive-size', suppliedSettings),
     };
   }
 
@@ -356,6 +392,7 @@ export class StateManager {
   async reparseBoardFromMd() {
     try {
       this.setState(this.getParsedBoard(this.getAView().data), false);
+      await this.updateNonKanbanContentFlag(this.file);
     } catch (e) {
       console.error(e);
       this.setError(e);
@@ -389,12 +426,13 @@ export class StateManager {
       return update(lane, {
         children: {
           $set: lane.children.filter((item) => {
+            // Only archive items that are truly complete (have the done checkChar)
             const isComplete = item.data.checked && item.data.checkChar === getTaskStatusDone();
-            if (lane.data.shouldMarkItemsComplete || isComplete) {
+            if (isComplete) {
               archived.push(item);
             }
 
-            return !isComplete && !lane.data.shouldMarkItemsComplete;
+            return !isComplete;
           }),
         },
       });

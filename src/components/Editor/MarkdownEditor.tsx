@@ -28,8 +28,7 @@ interface MarkdownEditorProps {
 }
 
 export function allowNewLine(stateManager: StateManager, mod: boolean, shift: boolean) {
-  if (Platform.isMobile) return !(mod || shift);
-  return stateManager.getSetting('new-line-trigger') === 'enter' ? !(mod || shift) : mod || shift;
+  return stateManager.getSetting('new-line-trigger') === 'enter' ? !(mod || shift) : shift;
 }
 
 function getEditorAppProxy(view: KanbanView) {
@@ -59,7 +58,8 @@ function getEditorAppProxy(view: KanbanView) {
 
 function getMarkdownController(
   view: KanbanView,
-  getEditor: () => ObsidianEditor
+  getEditor: () => ObsidianEditor,
+  onSave?: () => void
 ): Record<any, any> {
   return {
     app: view.app,
@@ -77,6 +77,13 @@ function getMarkdownController(
     },
     get path() {
       return view.file.path;
+    },
+    // Handle vim :w and other save triggers
+    save() {
+      if (onSave) onSave();
+    },
+    requestSave() {
+      if (onSave) onSave();
     },
   };
 }
@@ -154,11 +161,29 @@ export function MarkdownEditor({
                 return true;
               },
               blur: () => {
+                (this.cm as any)._contextMenuOpen = false;
                 if (Platform.isMobile) {
                   view.contentEl.removeClass('is-mobile-editing');
                   this.app.mobileToolbar.update();
                 }
                 return true;
+              },
+              contextmenu: () => {
+                // Track when context menu opens (e.g., for spell check suggestions)
+                (this.cm as any)._contextMenuOpen = true;
+                return false;
+              },
+              click: () => {
+                // Context menu dismissed on click
+                (this.cm as any)._contextMenuOpen = false;
+                return false;
+              },
+              keydown: (evt) => {
+                // Stop arrow key events from propagating to Obsidian's workspace navigation
+                if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(evt.key)) {
+                  evt.stopPropagation();
+                }
+                return false;
               },
             })
           )
@@ -176,6 +201,11 @@ export function MarkdownEditor({
         }
 
         const makeEnterHandler = (mod: boolean, shift: boolean) => (cm: EditorView) => {
+          // If context menu is open (e.g., spell check), let the browser handle Enter
+          if ((cm as any)._contextMenuOpen) {
+            (cm as any)._contextMenuOpen = false;
+            return false;
+          }
           const didRun = onEnter(cm, mod, shift);
           if (didRun) return true;
           if (this.app.vault.getConfig('smartIndentList')) {
@@ -193,19 +223,92 @@ export function MarkdownEditor({
                 key: 'Enter',
                 run: makeEnterHandler(false, false),
                 shift: makeEnterHandler(false, true),
-                preventDefault: true,
               },
               {
                 key: 'Mod-Enter',
                 run: makeEnterHandler(true, false),
                 shift: makeEnterHandler(true, true),
-                preventDefault: true,
               },
               {
                 key: 'Escape',
                 run: (cm) => {
+                  (cm as any)._contextMenuOpen = false;
                   onEscape(cm);
                   return false;
+                },
+                preventDefault: true,
+              },
+              {
+                // Cmd+S / Ctrl+S saves the card (for vim users and general UX)
+                key: 'Mod-s',
+                run: (cm) => {
+                  onSubmit(cm);
+                  return true;
+                },
+                preventDefault: true,
+              },
+              {
+                // Cmd+K / Ctrl+K creates a markdown link from selection
+                key: 'Mod-k',
+                run: (cm) => {
+                  const selection = cm.state.selection.main;
+                  const selectedText = cm.state.sliceDoc(selection.from, selection.to);
+                  const linkText = selectedText || 'link text';
+                  const newText = `[${linkText}]()`;
+                  // Position cursor inside the parentheses
+                  const cursorPos = selection.from + linkText.length + 3;
+                  cm.dispatch({
+                    changes: { from: selection.from, to: selection.to, insert: newText },
+                    selection: EditorSelection.cursor(cursorPos),
+                  });
+                  return true;
+                },
+                preventDefault: true,
+              },
+              {
+                // Cmd+L / Ctrl+L toggles checkbox status (cycle through states) (#668)
+                key: 'Mod-l',
+                run: (cm) => {
+                  const line = cm.state.doc.lineAt(cm.state.selection.main.head);
+                  const lineText = line.text;
+                  // Match checkbox pattern: optional leading whitespace, -, optional whitespace, [char]
+                  const checkboxMatch = lineText.match(/^(\s*-\s*)\[(.)\]/);
+                  if (checkboxMatch) {
+                    const prefix = checkboxMatch[1];
+                    const currentChar = checkboxMatch[2];
+                    // Cycle: space -> x -> - -> space
+                    let newChar: string;
+                    if (currentChar === ' ') newChar = 'x';
+                    else if (currentChar === 'x') newChar = '-';
+                    else newChar = ' ';
+                    const newText = `${prefix}[${newChar}]${lineText.slice(checkboxMatch[0].length)}`;
+                    cm.dispatch({
+                      changes: { from: line.from, to: line.to, insert: newText },
+                    });
+                  } else {
+                    // No checkbox found, add one at the start of the line (after any whitespace)
+                    const leadingWhitespace = lineText.match(/^(\s*)/)?.[1] || '';
+                    const restOfLine = lineText.slice(leadingWhitespace.length);
+                    // If line already starts with -, replace it with checkbox
+                    if (restOfLine.startsWith('- ')) {
+                      const newText = `${leadingWhitespace}- [ ] ${restOfLine.slice(2)}`;
+                      cm.dispatch({
+                        changes: { from: line.from, to: line.to, insert: newText },
+                      });
+                    } else if (restOfLine.startsWith('-')) {
+                      const newText = `${leadingWhitespace}- [ ] ${restOfLine.slice(1).trimStart()}`;
+                      cm.dispatch({
+                        changes: { from: line.from, to: line.to, insert: newText },
+                      });
+                    } else {
+                      // Add checkbox to plain text
+                      const newText = `${leadingWhitespace}- [ ] ${restOfLine}`;
+                      cm.dispatch({
+                        changes: { from: line.from, to: line.to, insert: newText },
+                      });
+                    }
+                  }
+                  return true;
                 },
                 preventDefault: true,
               },
@@ -217,7 +320,14 @@ export function MarkdownEditor({
       }
     }
 
-    const controller = getMarkdownController(view, () => editor.editor);
+    const controller = getMarkdownController(
+      view,
+      () => editor.editor,
+      // onSave callback for vim :w and Cmd+S
+      () => {
+        if (internalRef.current) onSubmit(internalRef.current);
+      }
+    );
     const app = getEditorAppProxy(view);
     const editor = view.plugin.addChild(new (Editor as any)(app, elRef.current, controller));
     const cm: EditorView = editor.cm;
@@ -228,12 +338,22 @@ export function MarkdownEditor({
     controller.editMode = editor;
     editor.set(value || '');
     if (isEditing(editState)) {
-      cm.dispatch({
-        userEvent: 'select.pointer',
-        selection: EditorSelection.single(cm.posAtCoords(editState, false)),
-      });
-
-      cm.dom.win.setTimeout(() => {
+      // Delay posAtCoords until after the DOM has settled to avoid
+      // CodeMirror "Measure loop restarted more than 5 times" errors
+      cm.dom.win.requestAnimationFrame(() => {
+        if (!internalRef.current) return; // Editor was unmounted
+        try {
+          cm.dispatch({
+            userEvent: 'select.pointer',
+            selection: EditorSelection.single(cm.posAtCoords(editState, false)),
+          });
+        } catch (e) {
+          // Fall back to end of document if posAtCoords fails
+          cm.dispatch({
+            userEvent: 'select.pointer',
+            selection: EditorSelection.cursor(cm.state.doc.length),
+          });
+        }
         setInsertMode(cm);
       });
     }
@@ -247,19 +367,26 @@ export function MarkdownEditor({
     }
 
     return () => {
+      // Blur the editor to release focus and keyboard control
+      if (cm.hasFocus) {
+        cm.contentDOM.blur();
+      }
+
+      // Clear activeEditor on all platforms to prevent keyboard shortcut blocking
+      if (view.activeEditor === controller) {
+        view.activeEditor = null;
+      }
+
+      if (app.workspace.activeEditor === controller) {
+        app.workspace.activeEditor = null;
+      }
+
       if (Platform.isMobile) {
         cm.dom.win.removeEventListener('keyboardDidShow', onShow);
-
-        if (view.activeEditor === controller) {
-          view.activeEditor = null;
-        }
-
-        if (app.workspace.activeEditor === controller) {
-          app.workspace.activeEditor = null;
-          (app as any).mobileToolbar.update();
-          view.contentEl.removeClass('is-mobile-editing');
-        }
+        (app as any).mobileToolbar.update();
+        view.contentEl.removeClass('is-mobile-editing');
       }
+
       view.plugin.removeChild(editor);
       internalRef.current = null;
       if (editorRef) editorRef.current = null;
@@ -274,7 +401,7 @@ export function MarkdownEditor({
       <div className={classcat(cls)} ref={elRef}></div>
       {Platform.isMobile && (
         <button
-          onClick={() => onSubmit(internalRef.current)}
+          onPointerUp={() => onSubmit(internalRef.current)}
           className={classcat([c('item-submit-button'), 'mod-cta'])}
         >
           {t('Submit')}

@@ -90,6 +90,10 @@ export interface KanbanSettings {
   'tag-sort'?: TagSort[];
   'time-format'?: string;
   'time-trigger'?: string;
+  'sub-board-show-summary'?: boolean;
+  'sub-board-count-unchecked'?: boolean;
+  'sub-board-count-non-archived'?: boolean;
+  'sub-board-count-non-complete-lane'?: boolean;
 }
 
 export interface KanbanViewSettings {
@@ -138,6 +142,10 @@ export const settingKeyLookup: Set<keyof KanbanSettings> = new Set([
   'tag-sort',
   'time-format',
   'time-trigger',
+  'sub-board-show-summary',
+  'sub-board-count-unchecked',
+  'sub-board-count-non-archived',
+  'sub-board-count-non-complete-lane',
 ]);
 
 export type SettingRetriever = <K extends keyof KanbanSettings>(
@@ -191,7 +199,7 @@ export class SettingsManager {
   constructUI(contentEl: HTMLElement, heading: string, local: boolean) {
     this.win = contentEl.win;
 
-    const { templateFiles, vaultFolders, templateWarning } = getListOptions(this.app);
+    const { templateFiles, vaultFolders, templateWarning, limitWarnings } = getListOptions(this.app);
 
     contentEl.createEl('h3', { text: heading });
 
@@ -204,6 +212,14 @@ export class SettingsManager {
         text: t(
           'Set the default Kanban board settings. Settings can be overridden on a board-by-board basis.'
         ),
+      });
+    }
+
+    // Display limit warnings for large vaults
+    if (limitWarnings?.length) {
+      const warningEl = contentEl.createEl('div', { cls: c('settings-limit-warning') });
+      limitWarnings.forEach((warning) => {
+        warningEl.createEl('p', { text: warning });
       });
     }
 
@@ -1530,6 +1546,176 @@ export class SettingsManager {
             });
         });
     });
+
+    contentEl.createEl('h4', { text: t('Sub-boards') });
+
+    new Setting(contentEl)
+      .setName(t('Show sub-board summary'))
+      .setDesc(t('When toggled, cards linking to other kanban boards will show a summary of open tasks.'))
+      .then((setting) => {
+        let toggleComponent: ToggleComponent;
+
+        setting
+          .addToggle((toggle) => {
+            toggleComponent = toggle;
+
+            const [value, globalValue] = this.getSetting('sub-board-show-summary', local);
+
+            if (value !== undefined && value !== null) {
+              toggle.setValue(value as boolean);
+            } else if (globalValue !== undefined && globalValue !== null) {
+              toggle.setValue(globalValue as boolean);
+            } else {
+              toggle.setValue(true);
+            }
+
+            toggle.onChange((newValue) => {
+              this.applySettingsUpdate({
+                'sub-board-show-summary': {
+                  $set: newValue,
+                },
+              });
+            });
+          })
+          .addExtraButton((b) => {
+            b.setIcon('lucide-rotate-ccw')
+              .setTooltip(t('Reset to default'))
+              .onClick(() => {
+                const [, globalValue] = this.getSetting('sub-board-show-summary', local);
+                toggleComponent.setValue(globalValue !== false);
+
+                this.applySettingsUpdate({
+                  $unset: ['sub-board-show-summary'],
+                });
+              });
+          });
+      });
+
+    new Setting(contentEl)
+      .setName(t('Count unchecked cards'))
+      .setDesc(t('Include unchecked cards ([ ]) in the sub-board open count.'))
+      .then((setting) => {
+        let toggleComponent: ToggleComponent;
+
+        setting
+          .addToggle((toggle) => {
+            toggleComponent = toggle;
+
+            const [value, globalValue] = this.getSetting('sub-board-count-unchecked', local);
+
+            if (value !== undefined && value !== null) {
+              toggle.setValue(value as boolean);
+            } else if (globalValue !== undefined && globalValue !== null) {
+              toggle.setValue(globalValue as boolean);
+            } else {
+              toggle.setValue(true);
+            }
+
+            toggle.onChange((newValue) => {
+              this.applySettingsUpdate({
+                'sub-board-count-unchecked': {
+                  $set: newValue,
+                },
+              });
+            });
+          })
+          .addExtraButton((b) => {
+            b.setIcon('lucide-rotate-ccw')
+              .setTooltip(t('Reset to default'))
+              .onClick(() => {
+                const [, globalValue] = this.getSetting('sub-board-count-unchecked', local);
+                toggleComponent.setValue(globalValue !== false);
+
+                this.applySettingsUpdate({
+                  $unset: ['sub-board-count-unchecked'],
+                });
+              });
+          });
+      });
+
+    new Setting(contentEl)
+      .setName(t('Count non-archived cards'))
+      .setDesc(t('Include cards not in the archive in the sub-board open count.'))
+      .then((setting) => {
+        let toggleComponent: ToggleComponent;
+
+        setting
+          .addToggle((toggle) => {
+            toggleComponent = toggle;
+
+            const [value, globalValue] = this.getSetting('sub-board-count-non-archived', local);
+
+            if (value !== undefined && value !== null) {
+              toggle.setValue(value as boolean);
+            } else if (globalValue !== undefined && globalValue !== null) {
+              toggle.setValue(globalValue as boolean);
+            } else {
+              toggle.setValue(true);
+            }
+
+            toggle.onChange((newValue) => {
+              this.applySettingsUpdate({
+                'sub-board-count-non-archived': {
+                  $set: newValue,
+                },
+              });
+            });
+          })
+          .addExtraButton((b) => {
+            b.setIcon('lucide-rotate-ccw')
+              .setTooltip(t('Reset to default'))
+              .onClick(() => {
+                const [, globalValue] = this.getSetting('sub-board-count-non-archived', local);
+                toggleComponent.setValue(globalValue !== false);
+
+                this.applySettingsUpdate({
+                  $unset: ['sub-board-count-non-archived'],
+                });
+              });
+          });
+      });
+
+    new Setting(contentEl)
+      .setName(t('Count cards not in complete lanes'))
+      .setDesc(t('Include cards not in lanes marked as complete in the sub-board open count.'))
+      .then((setting) => {
+        let toggleComponent: ToggleComponent;
+
+        setting
+          .addToggle((toggle) => {
+            toggleComponent = toggle;
+
+            const [value, globalValue] = this.getSetting('sub-board-count-non-complete-lane', local);
+
+            if (value !== undefined && value !== null) {
+              toggle.setValue(value as boolean);
+            } else if (globalValue !== undefined && globalValue !== null) {
+              toggle.setValue(globalValue as boolean);
+            } else {
+              toggle.setValue(true);
+            }
+
+            toggle.onChange((newValue) => {
+              this.applySettingsUpdate({
+                'sub-board-count-non-complete-lane': {
+                  $set: newValue,
+                },
+              });
+            });
+          })
+          .addExtraButton((b) => {
+            b.setIcon('lucide-rotate-ccw')
+              .setTooltip(t('Reset to default'))
+              .onClick(() => {
+                const [, globalValue] = this.getSetting('sub-board-count-non-complete-lane', local);
+                toggleComponent.setValue(globalValue !== false);
+
+                this.applySettingsUpdate({
+                  $unset: ['sub-board-count-non-complete-lane'],
+                });
+              });
+          });
+      });
   }
 
   cleanUp() {

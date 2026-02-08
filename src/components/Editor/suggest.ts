@@ -46,20 +46,30 @@ export class DateSuggest extends EditorSuggest<[]> {
     this.suggestEl.addClass(c('date-suggest'));
 
     const move = (dir: 'up' | 'right' | 'down' | 'left') => {
-      const { datepicker } = this;
+      const { datepicker, stateManager } = this;
       if (!datepicker) return;
 
       const currentDate = moment(datepicker.selectedDates[0] || new Date());
       let nextDate: Date;
 
+      // Get the first day of week setting (0 = Sunday, 1 = Monday, etc.)
+      const firstDayOfWeek = stateManager?.getSetting('date-picker-week-start') ?? 0;
+      // Calculate the last day of the week: (firstDayOfWeek + 6) % 7
+      // For Sunday start (0): last day = Saturday (6)
+      // For Monday start (1): last day = Sunday (0)
+      const lastDayOfWeek = (firstDayOfWeek + 6) % 7;
+
+      // Use .day() which always returns 0=Sunday, 1=Monday, etc. regardless of locale
+      const currentDay = currentDate.day();
+
       if (dir === 'right') {
-        if (currentDate.weekday() === 6) {
+        if (currentDay === lastDayOfWeek) {
           nextDate = toNextMonth(currentDate).toDate();
         } else {
           nextDate = currentDate.add(1, 'day').toDate();
         }
       } else if (dir === 'left') {
-        if (currentDate.weekday() === 0) {
+        if (currentDay === firstDayOfWeek) {
           nextDate = toPreviousMonth(currentDate).toDate();
         } else {
           nextDate = currentDate.subtract(1, 'day').toDate();

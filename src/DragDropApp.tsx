@@ -19,6 +19,7 @@ import {
   updateEntity,
 } from './dnd/util/data';
 import { getBoardModifiers } from './helpers/boardModifiers';
+import { triggerCardEvent, triggerLaneEvent } from './helpers/kanbanEvents';
 import KanbanPlugin from './main';
 import { frontmatterKey } from './parsers/common';
 import {
@@ -104,12 +105,15 @@ export function DragDropApp({ win, plugin }: { win: Window; plugin: KanbanPlugin
       if (sourceFile === destinationFile) {
         const view = plugin.getKanbanView(dragEntity.scopeId, dragEntityData.win);
         const stateManager = plugin.stateManagers.get(view.file);
+        const entityBeforeMove = getEntityFromPath(stateManager.state, dragPath);
 
         if (inDropArea) {
           dropPath.push(0);
         }
 
-        return stateManager.setState((board) => {
+        const finalDropPath = [...dropPath];
+
+        stateManager.setState((board) => {
           const entity = getEntityFromPath(board, dragPath);
           const newBoard: Board = moveEntity(
             board,
@@ -180,12 +184,40 @@ export function DragDropApp({ win, plugin }: { win: Window; plugin: KanbanPlugin
 
           return newBoard;
         });
+
+        // Trigger move event after state is updated
+        if (entityBeforeMove.type === DataTypes.Item) {
+          triggerCardEvent(
+            stateManager.app,
+            'kanban:card-moved',
+            entityBeforeMove as Item,
+            finalDropPath,
+            stateManager.file.path,
+            dragPath
+          );
+        } else if (entityBeforeMove.type === DataTypes.Lane) {
+          triggerLaneEvent(
+            stateManager.app,
+            'kanban:lane-moved',
+            entityBeforeMove as Lane,
+            finalDropPath,
+            stateManager.file.path,
+            dragPath
+          );
+        }
+
+        stateManager.forceRefresh();
+
+        return;
       }
 
       const sourceView = plugin.getKanbanView(dragEntity.scopeId, dragEntityData.win);
       const sourceStateManager = plugin.stateManagers.get(sourceView.file);
       const destinationView = plugin.getKanbanView(dropEntity.scopeId, dropEntityData.win);
       const destinationStateManager = plugin.stateManagers.get(destinationView.file);
+
+      const entityBeforeMove = getEntityFromPath(sourceStateManager.state, dragPath);
+      let finalDropPath = [...dropPath];
 
       sourceStateManager.setState((sourceBoard) => {
         const entity = getEntityFromPath(sourceBoard, dragPath);
@@ -200,6 +232,7 @@ export function DragDropApp({ win, plugin }: { win: Window; plugin: KanbanPlugin
 
             if (shouldAppend) dropPath.push(parent.children.length);
             else dropPath.push(0);
+            finalDropPath = [...dropPath];
           }
 
           const toInsert: Nestable[] = [];
@@ -255,6 +288,28 @@ export function DragDropApp({ win, plugin }: { win: Window; plugin: KanbanPlugin
           return removeEntity(sourceBoard, dragPath, replacementEntity);
         }
       });
+
+      // Trigger move event for cross-board moves
+      if (entityBeforeMove.type === DataTypes.Item) {
+        triggerCardEvent(
+          sourceStateManager.app,
+          'kanban:card-moved',
+          entityBeforeMove as Item,
+          finalDropPath,
+          destinationStateManager.file.path,
+          dragPath,
+          sourceStateManager.file.path
+        );
+      } else if (entityBeforeMove.type === DataTypes.Lane) {
+        triggerLaneEvent(
+          sourceStateManager.app,
+          'kanban:lane-moved',
+          entityBeforeMove as Lane,
+          finalDropPath,
+          destinationStateManager.file.path,
+          dragPath
+        );
+      }
     },
     [views]
   );

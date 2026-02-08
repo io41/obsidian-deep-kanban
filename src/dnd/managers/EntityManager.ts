@@ -72,8 +72,20 @@ export class EntityManager {
     );
 
     if (this.scrollParent) {
+      // Register immediately so dragging works before IntersectionObserver fires.
+      // The observer will handle unregistration if the element scrolls out of view.
+      const win = getParentWindow(entityNode);
+      const initialEntity = this.getEntity(measureNode.getBoundingClientRect());
+      this.dndManager.observeResize(measureNode);
+      this.dndManager.registerHitboxEntity(this.entityId, initialEntity, win);
+      this.parent?.children.set(this.entityId, {
+        entity: initialEntity,
+        manager: this,
+      });
+      this.setVisibility(true);
+
       this.scrollParent.registerObserverHandler(this.entityId, measureNode, (entry) => {
-        const win = getParentWindow(entry.target);
+        const entryWin = getParentWindow(entry.target);
 
         if (entry.isIntersecting) {
           const entity = this.getEntity(entry.boundingClientRect);
@@ -85,16 +97,16 @@ export class EntityManager {
           this.dndManager.observeResize(measureNode);
 
           if (!this.parent || this.parent.isVisible) {
-            this.dndManager.registerHitboxEntity(this.entityId, entity, win);
+            this.dndManager.registerHitboxEntity(this.entityId, entity, entryWin);
             this.children.forEach((child, childId) => {
-              this.dndManager.registerHitboxEntity(childId, child.entity, win);
+              this.dndManager.registerHitboxEntity(childId, child.entity, entryWin);
             });
             this.setVisibility(true);
           }
         } else {
-          this.dndManager.unregisterHitboxEntity(this.entityId, win);
+          this.dndManager.unregisterHitboxEntity(this.entityId, entryWin);
           this.children.forEach((_, childId) => {
-            this.dndManager.unregisterHitboxEntity(childId, win);
+            this.dndManager.unregisterHitboxEntity(childId, entryWin);
           });
           this.parent?.children.delete(this.entityId);
           this.dndManager.unobserveResize(measureNode);
@@ -139,11 +151,38 @@ export class EntityManager {
 
   getEntity(rect: DOMRectReadOnly): Entity {
     const manager = this;
+    const minPlaceholderSize = 12;
+    const adjustPlaceholderRect = (input: DOMRectReadOnly): DOMRectReadOnly => {
+      const data = manager.getEntityData();
+      if (data.type !== 'placeholder') {
+        return input;
+      }
+
+      const axis = manager.sortManager?.axis;
+      if (axis === 'horizontal' && input.width < minPlaceholderSize) {
+        return {
+          ...input,
+          width: minPlaceholderSize,
+          right: input.left + minPlaceholderSize,
+        };
+      }
+
+      if (axis === 'vertical' && input.height < minPlaceholderSize) {
+        return {
+          ...input,
+          height: minPlaceholderSize,
+          bottom: input.top + minPlaceholderSize,
+        };
+      }
+
+      return input;
+    };
+
     return {
       scopeId: this.scopeId,
       entityId: this.entityId,
       initial: calculateHitbox(
-        rect,
+        adjustPlaceholderRect(rect),
         manager.scrollParent?.scrollState || initialScrollState,
         manager.scrollParent?.getScrollShift() || initialScrollShift,
         null
@@ -156,7 +195,7 @@ export class EntityManager {
       },
       recalcInitial() {
         this.initial = calculateHitbox(
-          manager.measureNode.getBoundingClientRect(),
+          adjustPlaceholderRect(manager.measureNode.getBoundingClientRect()),
           manager.scrollParent?.scrollState || initialScrollState,
           manager.scrollParent?.getScrollShift() || initialScrollShift,
           null

@@ -78,12 +78,15 @@ export class DragManager {
   }
 
   dragStart(e: PointerEvent, referenceElement?: HTMLElement) {
-    const id =
-      referenceElement?.dataset.hitboxid || (e.currentTarget as HTMLElement).dataset.hitboxid;
+    const currentTarget = e.currentTarget as HTMLElement | null;
+    const id = referenceElement?.dataset?.hitboxid || currentTarget?.dataset?.hitboxid;
 
     if (!id) return;
 
-    const styles = getComputedStyle(referenceElement || (e.currentTarget as HTMLElement));
+    const element = referenceElement || currentTarget;
+    if (!element) return;
+
+    const styles = getComputedStyle(element);
 
     this.dragEntityId = id;
     this.dragOrigin = { x: e.pageX, y: e.pageY };
@@ -96,6 +99,9 @@ export class DragManager {
       parseFloat(styles.marginRight) || 0,
       parseFloat(styles.marginBottom) || 0,
     ];
+
+    this.hitboxEntities.forEach((entity) => entity.recalcInitial());
+    this.scrollEntities.forEach((entity) => entity.recalcInitial());
 
     this.emitter.emit('dragStart', this.getDragEventData());
   }
@@ -111,17 +117,28 @@ export class DragManager {
     this.dragOriginHitbox = entity.getHitbox();
     this.dragEntityMargin = [0, 0, 0, 0];
 
+    this.hitboxEntities.forEach((entity) => entity.recalcInitial());
+    this.scrollEntities.forEach((entity) => entity.recalcInitial());
+
     this.emitter.emit('dragStart', this.getDragEventData());
   }
 
   dragMove(e: PointerEvent) {
-    this.dragPosition = { x: e.pageX, y: e.pageY };
+    const nextPosition = { x: e.pageX, y: e.pageY };
+    if (this.dragPosition && distanceBetween(this.dragPosition, nextPosition) < 1) {
+      return;
+    }
+    this.dragPosition = nextPosition;
     this.emitter.emit('dragMove', this.getDragEventData());
     this.calculateDragIntersect();
   }
 
   dragMoveHTML(e: DragEvent) {
-    this.dragPosition = { x: e.pageX, y: e.pageY };
+    const nextPosition = { x: e.pageX, y: e.pageY };
+    if (this.dragPosition && distanceBetween(this.dragPosition, nextPosition) < 1) {
+      return;
+    }
+    this.dragPosition = nextPosition;
     this.emitter.emit('dragMove', this.getDragEventData());
     this.calculateDragIntersect();
   }
@@ -180,19 +197,40 @@ export class DragManager {
     this.hitboxEntities.forEach((entity) => {
       const data = entity.getData();
 
-      if (win === data.win && (data.accepts.includes(type) || data.acceptsSort?.includes(type))) {
-        hitboxEntities.push(entity);
-        hitboxHitboxes.push(entity.getHitbox());
+      if (win !== data.win) {
+        return;
       }
+
+      if (!data.accepts.includes(type) && !data.acceptsSort?.includes(type)) {
+        return;
+      }
+
+      const dragScopeId = this.dragEntity?.scopeId;
+      if (dragScopeId && dragScopeId !== 'htmldnd' && entity.scopeId !== dragScopeId) {
+        return;
+      }
+
+      hitboxEntities.push(entity);
+      hitboxHitboxes.push(entity.getHitbox());
     });
 
     this.scrollEntities.forEach((entity) => {
       const data = entity.getData();
 
-      if (win === data.win && data.accepts.includes(type)) {
-        scrollEntities.push(entity);
-        scrollHitboxes.push(entity.getHitbox());
+      // Filter by window and accepted types
+      if (win !== data.win || !data.accepts.includes(type)) {
+        return;
       }
+
+      // For non-HTML drags, also filter by scopeId to prevent cross-board scroll
+      // HTML drags (scopeId === 'htmldnd') should allow scrolling any board
+      const dragScopeId = this.dragEntity?.scopeId;
+      if (dragScopeId && dragScopeId !== 'htmldnd' && entity.scopeId !== dragScopeId) {
+        return;
+      }
+
+      scrollEntities.push(entity);
+      scrollHitboxes.push(entity.getHitbox());
     });
 
     if (hitboxEntities.length === 0 && scrollEntities.length === 0) {
@@ -441,14 +479,28 @@ export function useDragHandle(
 
       const onEnd = (e: PointerEvent) => {
         if (e.pointerId !== pointerId) return;
+        cleanup();
+        dndManager.dragManager.dragEnd(e);
+      };
+
+      // Cancel drag when window loses focus (e.g., opening link in new window)
+      const onBlur = () => {
+        cleanup();
+        // Create a synthetic event for dragEnd
+        const syntheticEvent = new PointerEvent('pointercancel', {
+          pointerId: pointerId,
+        });
+        dndManager.dragManager.dragEnd(syntheticEvent);
+      };
+
+      const cleanup = () => {
         win.clearTimeout(longPressTimeout);
         isDragging = false;
-
-        dndManager.dragManager.dragEnd(e);
 
         win.removeEventListener('pointermove', onMove);
         win.removeEventListener('pointerup', onEnd);
         win.removeEventListener('pointercancel', onEnd);
+        win.removeEventListener('blur', onBlur);
 
         if (isTouchEvent) {
           win.removeEventListener('contextmenu', cancelEvent, true);
@@ -459,6 +511,7 @@ export function useDragHandle(
       win.addEventListener('pointermove', onMove);
       win.addEventListener('pointerup', onEnd);
       win.addEventListener('pointercancel', onEnd);
+      win.addEventListener('blur', onBlur);
     };
 
     const swallowTouchEvent = (e: TouchEvent) => {
@@ -466,7 +519,7 @@ export function useDragHandle(
     };
 
     handle.addEventListener('pointerdown', onPointerDown);
-    handle.addEventListener('touchstart', swallowTouchEvent);
+    handle.addEventListener('touchstart', swallowTouchEvent, { passive: true });
 
     return () => {
       handle.removeEventListener('pointerdown', onPointerDown);
@@ -495,6 +548,7 @@ export function createHTMLDndHandlers(stateManager: StateManager) {
 
   const onDrop = useCallback(
     async (e: DragEvent) => {
+      e.preventDefault();
       dndManager.dragManager.dragEndHTML(
         e,
         stateManager.getAView().id,

@@ -75,6 +75,7 @@ export function InlineMetadata({ item, stateManager }: InlineMetadataProps) {
                   searchQuery={search?.query}
                   dateLabel={isDate ? label : undefined}
                   data={data}
+                  shouldColorDate={isTaskMetadata}
                 />
               </span>
             )}

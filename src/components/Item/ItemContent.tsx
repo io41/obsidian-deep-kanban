@@ -9,6 +9,7 @@ import {
   useMemo,
   useRef,
 } from 'preact/hooks';
+import useOnclickOutside from 'react-cool-onclickoutside';
 import { StateManager } from 'src/StateManager';
 import { useNestedEntityPath } from 'src/dnd/components/Droppable';
 import { Path } from 'src/dnd/types';
@@ -24,6 +25,7 @@ import { c, useGetDateColorFn, useGetTagColorFn } from '../helpers';
 import { EditState, EditingState, Item, isEditing } from '../types';
 import { DateAndTime, RelativeDate } from './DateAndTime';
 import { InlineMetadata } from './InlineMetadata';
+import { SubBoardIndicator } from './SubBoardIndicator';
 import {
   constructDatePicker,
   constructMenuDatePickerOnChange,
@@ -36,7 +38,7 @@ export function useDatePickers(item: Item, explicitPath?: Path) {
   const path = explicitPath || useNestedEntityPath();
 
   return useMemo(() => {
-    const onEditDate = (e: MouseEvent) => {
+    const onEditDate = (e: MouseEvent, dateIndex?: number) => {
       constructDatePicker(
         e.view,
         stateManager,
@@ -47,6 +49,7 @@ export function useDatePickers(item: Item, explicitPath?: Path) {
           item,
           hasDate: true,
           path,
+          dateIndex,
         }),
         item.data.metadata.date?.toDate()
       );
@@ -219,7 +222,10 @@ export const ItemContent = memo(function ItemContent({
     (e: MouseEvent) => {
       if (e.targetNode.instanceOf(HTMLElement)) {
         if (e.targetNode.hasClass(c('item-metadata-date'))) {
-          onEditDate(e);
+          // Get date index from parent span with data-date-index attribute
+          const dateWrapper = e.targetNode.closest('[data-date-index]') as HTMLElement;
+          const dateIndex = dateWrapper ? parseInt(dateWrapper.dataset.dateIndex, 10) : undefined;
+          onEditDate(e, dateIndex);
         } else if (e.targetNode.hasClass(c('item-metadata-time'))) {
           onEditTime(e);
         }
@@ -235,14 +241,25 @@ export const ItemContent = memo(function ItemContent({
     return true;
   }, [item]);
 
+  // Save on click outside (similar to ItemForm, but save instead of cancel)
+  const clickOutsideRef = useOnclickOutside(onSubmit, {
+    ignoreClass: [c('ignore-click-outside'), 'mobile-toolbar', 'suggestion-container'],
+  });
+
   const onCheckboxContainerClick = useCallback(
     (e: PointerEvent) => {
       const target = e.target as HTMLElement;
 
       if (target.hasClass('task-list-item-checkbox')) {
         if (target.dataset.src) {
+          window.setTimeout(() => stateManager.forceRefresh());
           return;
         }
+
+        // Prevent native checkbox toggle and event bubbling to avoid race conditions
+        // on mobile where touch events can cause checkbox/strikethrough mismatch (#876)
+        e.preventDefault();
+        e.stopPropagation();
 
         const checkboxIndex = parseInt(target.dataset.checkboxIndex, 10);
         const checked = checkCheckbox(stateManager, item.data.titleRaw, checkboxIndex);
@@ -256,7 +273,7 @@ export const ItemContent = memo(function ItemContent({
 
   if (!isStatic && isEditing(editState)) {
     return (
-      <div className={c('item-input-wrapper')}>
+      <div className={c('item-input-wrapper')} ref={clickOutsideRef}>
         <MarkdownEditor
           editState={editState}
           className={c('item-input')}
@@ -304,6 +321,13 @@ export const ItemContent = memo(function ItemContent({
           />
           <InlineMetadata item={item} stateManager={stateManager} />
           <Tags tags={item.data.metadata.tags} searchQuery={searchQuery} />
+          {item.data.metadata.subBoard?.isSubBoard && (
+            <SubBoardIndicator
+              subBoard={item.data.metadata.subBoard}
+              file={item.data.metadata.file}
+              sourcePath={filePath}
+            />
+          )}
         </div>
       )}
     </div>

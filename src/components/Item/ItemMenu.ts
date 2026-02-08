@@ -1,10 +1,12 @@
 import update from 'immutability-helper';
-import { Menu, Platform, TFile, TFolder } from 'obsidian';
+import { Menu, Notice, Platform, TFile, TFolder } from 'obsidian';
 import { Dispatch, StateUpdater, useCallback } from 'preact/hooks';
 import { StateManager } from 'src/StateManager';
 import { Path } from 'src/dnd/types';
-import { moveEntity } from 'src/dnd/util/data';
+import { getEntityFromPath, moveEntity } from 'src/dnd/util/data';
+import { triggerCardEvent } from 'src/helpers/kanbanEvents';
 import { t } from 'src/lang/helpers';
+import { createSubBoard } from 'src/helpers/subBoardHelpers';
 
 import { BoardModifiers } from '../../helpers/boardModifiers';
 import { applyTemplate, escapeRegExpStr, generateInstanceId } from '../helpers';
@@ -20,7 +22,10 @@ const illegalCharsRegEx = /[\\/:"*?<>|]+/g;
 const embedRegEx = /!?\[\[([^\]]*)\.[^\]]+\]\]/g;
 const wikilinkRegEx = /!?\[\[([^\]]*)\]\]/g;
 const mdLinkRegEx = /!?\[([^\]]*)\]\([^)]*\)/g;
+const externalMdLinkRegEx = /\[[^\]]*\]\(https?:\/\/[^)]+\)/g;
 const tagRegEx = /#([^\u2000-\u206F\u2E00-\u2E7F'!"#$%&()*+,.:;<=>?@^`{|}~[\]\\\s\n\r]+)/g;
+const dataviewInlineRegEx = /\[([^\]]+)::\s*[^\]]*\]/g;
+const kanbanDateRegEx = /@@?\{[^}]+\}/g;
 const condenceWhiteSpaceRE = /\s+/g;
 
 interface UseItemMenuParams {
@@ -56,41 +61,72 @@ export function useItemMenu({
             .setTitle(t('New note from card'))
             .onClick(async () => {
               const prevTitle = item.data.titleRaw.split('\n')[0].trim();
-              const sanitizedTitle = prevTitle
+
+              // Extract tags, Dataview fields, Kanban dates, and external links to preserve after the note link
+              const tagMatches = prevTitle.match(tagRegEx) || [];
+              const dataviewMatches = prevTitle.match(dataviewInlineRegEx) || [];
+              const dateMatches = prevTitle.match(kanbanDateRegEx) || [];
+              const externalLinkMatches = prevTitle.match(externalMdLinkRegEx) || [];
+              const preservedParts = [...tagMatches, ...dataviewMatches, ...dateMatches, ...externalLinkMatches].join(' ');
+
+              // Remove tags, Dataview fields, Kanban dates, and external links from filename
+              let sanitizedTitle = prevTitle
                 .replace(embedRegEx, '$1')
                 .replace(wikilinkRegEx, '$1')
-                .replace(mdLinkRegEx, '$1')
-                .replace(tagRegEx, '$1')
+                .replace(externalMdLinkRegEx, '') // Remove external links entirely (preserved above)
+                .replace(mdLinkRegEx, '$1') // Keep text from other markdown links
+                .replace(tagRegEx, '')
+                .replace(dataviewInlineRegEx, '')
+                .replace(kanbanDateRegEx, '')
                 .replace(illegalCharsRegEx, ' ')
                 .trim()
                 .replace(condenceWhiteSpaceRE, ' ');
 
+              // Truncate to avoid ENAMETOOLONG errors (max 200 chars, leaving room for .md extension)
+              if (sanitizedTitle.length > 200) {
+                sanitizedTitle = sanitizedTitle.slice(0, 200).trim();
+              }
+
               const newNoteFolder = stateManager.getSetting('new-note-folder');
               const newNoteTemplatePath = stateManager.getSetting('new-note-template');
 
-              const targetFolder = newNoteFolder
-                ? (stateManager.app.vault.getAbstractFileByPath(newNoteFolder as string) as TFolder)
-                : stateManager.app.fileManager.getNewFileParent(stateManager.file.path);
+              let targetFolder: TFolder | null = null;
+              if (newNoteFolder) {
+                const folder = stateManager.app.vault.getAbstractFileByPath(newNoteFolder as string);
+                if (folder instanceof TFolder) {
+                  targetFolder = folder;
+                }
+              }
+              // Fall back to default location if folder setting is invalid or not set
+              if (!targetFolder) {
+                targetFolder = stateManager.app.fileManager.getNewFileParent(stateManager.file.path);
+              }
 
-              const newFile = (await (stateManager.app.fileManager as any).createNewMarkdownFile(
-                targetFolder,
-                sanitizedTitle
-              )) as TFile;
+              try {
+                const newFile = (await (stateManager.app.fileManager as any).createNewMarkdownFile(
+                  targetFolder,
+                  sanitizedTitle
+                )) as TFile;
 
-              const newLeaf = stateManager.app.workspace.splitActiveLeaf();
+                const newLeaf = stateManager.app.workspace.splitActiveLeaf();
 
-              await newLeaf.openFile(newFile);
+                await newLeaf.openFile(newFile);
 
-              stateManager.app.workspace.setActiveLeaf(newLeaf, false, true);
+                stateManager.app.workspace.setActiveLeaf(newLeaf, false, true);
 
-              await applyTemplate(stateManager, newNoteTemplatePath as string | undefined);
+                await applyTemplate(stateManager, newNoteTemplatePath as string | undefined);
 
-              const newTitleRaw = item.data.titleRaw.replace(
-                prevTitle,
-                stateManager.app.fileManager.generateMarkdownLink(newFile, stateManager.file.path)
-              );
+                const link = stateManager.app.fileManager.generateMarkdownLink(newFile, stateManager.file.path);
+                const newTitleRaw = item.data.titleRaw.replace(
+                  prevTitle,
+                  preservedParts ? `${link} ${preservedParts}` : link
+                );
 
-              boardModifiers.updateItem(path, stateManager.updateItemContent(item, newTitleRaw));
+                boardModifiers.updateItem(path, stateManager.updateItemContent(item, newTitleRaw));
+              } catch (e) {
+                new Notice(t('Failed to create note: ') + (e as Error).message);
+                console.error('Kanban: Failed to create note from card', e);
+              }
             });
         })
         .addItem((i) => {
@@ -123,6 +159,31 @@ export function useItemMenu({
             });
         })
         .addSeparator();
+
+      // Sub-board menu items
+      if (item.data.metadata.subBoard?.isSubBoard && item.data.metadata.file) {
+        menu.addItem((i) => {
+          i.setIcon('lucide-layers')
+            .setTitle(t('Open sub-board'))
+            .onClick(() => {
+              stateManager.app.workspace.openLinkText(
+                item.data.metadata.file.path,
+                stateManager.file.path,
+                false
+              );
+            });
+        });
+      }
+
+      menu.addItem((i) => {
+        i.setIcon('lucide-layout-grid')
+          .setTitle(t('Create sub-board'))
+          .onClick(async () => {
+            await createSubBoard(stateManager, boardModifiers, item, path);
+          });
+      });
+
+      menu.addSeparator();
 
       if (/\n/.test(item.data.titleRaw)) {
         menu.addItem((i) => {
@@ -211,11 +272,9 @@ export function useItemMenu({
           i.setIcon('lucide-x')
             .setTitle(t('Remove date'))
             .onClick(() => {
-              const shouldLinkDates = stateManager.getSetting('link-date-to-daily-note');
               const dateTrigger = stateManager.getSetting('date-trigger');
-              const contentMatch = shouldLinkDates
-                ? '(?:\\[[^\\]]+\\]\\([^\\)]+\\)|\\[\\[[^\\]]+\\]\\])'
-                : '{[^}]+}';
+              // Match ALL date formats (curly braces, wikilinks, markdown links) regardless of current setting
+              const contentMatch = '(?:{[^}]+}|\\[[^\\]]+\\]\\([^\\)]+\\)|\\[\\[[^\\]]+\\]\\])';
               const dateRegEx = new RegExp(
                 `(^|\\s)${escapeRegExpStr(dateTrigger as string)}${contentMatch}`
               );
@@ -269,16 +328,26 @@ export function useItemMenu({
         const lanes = stateManager.state.children;
         if (lanes.length <= 1) return;
         for (let i = 0, len = lanes.length; i < len; i++) {
-          menu.addItem((item) =>
-            item
+          menu.addItem((menuItem) =>
+            menuItem
               .setIcon('lucide-square-kanban')
               .setChecked(path[0] === i)
               .setTitle(lanes[i].data.title)
               .onClick(() => {
                 if (path[0] === i) return;
+                const cardBeforeMove = getEntityFromPath(stateManager.state, path) as Item;
+                const newPath: Path = [i, 0];
                 stateManager.setState((boardData) => {
-                  return moveEntity(boardData, path, [i, 0]);
+                  return moveEntity(boardData, path, newPath);
                 });
+                triggerCardEvent(
+                  stateManager.app,
+                  'kanban:card-moved',
+                  cardBeforeMove,
+                  newPath,
+                  stateManager.file.path,
+                  path
+                );
               })
           );
         }

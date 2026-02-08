@@ -78,6 +78,7 @@ interface MetadataValueProps {
   data: PageData;
   dateLabel?: string;
   searchQuery?: string;
+  shouldColorDate?: boolean;
 }
 
 export function getDateFromObj(v: any, stateManager: StateManager) {
@@ -147,7 +148,7 @@ export function pageDataToString(data: PageData, stateManager: StateManager): st
   return anyToString(data.value, stateManager);
 }
 
-export function MetadataValue({ data, dateLabel, searchQuery }: MetadataValueProps) {
+export function MetadataValue({ data, dateLabel, searchQuery, shouldColorDate }: MetadataValueProps) {
   const { view, stateManager } = useContext(KanbanContext);
   const getDateColor = useGetDateColorFn(stateManager);
 
@@ -167,7 +168,8 @@ export function MetadataValue({ data, dateLabel, searchQuery }: MetadataValuePro
         />
       );
     } else if (date) {
-      const dateColor = getDateColor(date);
+      // Only apply date colors for task metadata dates (📅, ⏳, etc.), not regular dataview fields
+      const dateColor = shouldColorDate ? getDateColor(date) : null;
       content = (
         <span
           className={classcat({

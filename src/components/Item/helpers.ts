@@ -55,6 +55,7 @@ export function constructDatePicker(
             locale: getDefaultLocale(stateManager),
             defaultDate: date,
             inline: true,
+            now: new Date(), // Ensure 'today' marker is current
             onChange: (dates) => {
               onChange(dates);
               selfDestruct();
@@ -89,6 +90,7 @@ interface ConstructMenuDatePickerOnChangeParams {
   item: Item;
   hasDate: boolean;
   path: Path;
+  dateIndex?: number;
 }
 
 export function constructMenuDatePickerOnChange({
@@ -97,14 +99,15 @@ export function constructMenuDatePickerOnChange({
   item,
   hasDate,
   path,
+  dateIndex,
 }: ConstructMenuDatePickerOnChangeParams) {
   const dateFormat = stateManager.getSetting('date-format');
   const shouldLinkDates = stateManager.getSetting('link-date-to-daily-note');
   const dateTrigger = stateManager.getSetting('date-trigger');
-  const contentMatch = shouldLinkDates
-    ? '(?:\\[[^\\]]+\\]\\([^)]+\\)|\\[\\[[^\\]]+\\]\\])'
-    : '{[^}]+}';
-  const dateRegEx = new RegExp(`(^|\\s)${escapeRegExpStr(dateTrigger as string)}${contentMatch}`);
+  // Match ALL date formats (curly braces, wikilinks, markdown links) regardless of current setting
+  // This ensures dates can be updated even if the link-date-to-daily-note setting has changed
+  const contentMatch = '(?:{[^}]+}|\\[[^\\]]+\\]\\([^)]+\\)|\\[\\[[^\\]]+\\]\\])';
+  const dateRegEx = new RegExp(`(^|\\s)${escapeRegExpStr(dateTrigger as string)}${contentMatch}`, 'g');
 
   return (dates: Date[]) => {
     const date = dates[0];
@@ -116,7 +119,21 @@ export function constructMenuDatePickerOnChange({
     let titleRaw = item.data.titleRaw;
 
     if (hasDate) {
-      titleRaw = item.data.titleRaw.replace(dateRegEx, `$1${dateTrigger}${wrappedDate}`);
+      // If we have a specific date index, replace only that occurrence
+      if (typeof dateIndex === 'number') {
+        let matchCount = 0;
+        titleRaw = item.data.titleRaw.replace(dateRegEx, (match, space) => {
+          if (matchCount === dateIndex) {
+            matchCount++;
+            return `${space}${dateTrigger}${wrappedDate}`;
+          }
+          matchCount++;
+          return match;
+        });
+      } else {
+        // No index specified, replace first occurrence (legacy behavior)
+        titleRaw = item.data.titleRaw.replace(dateRegEx, `$1${dateTrigger}${wrappedDate}`);
+      }
     } else {
       titleRaw = `${item.data.titleRaw} ${dateTrigger}${wrappedDate}`;
     }
@@ -309,7 +326,15 @@ export function linkTo(
   subpath?: string
 ) {
   // Generate a link relative to this Kanban board, respecting user link type preferences
-  return stateManager.app.fileManager.generateMarkdownLink(file, sourcePath, subpath);
+  const link = stateManager.app.fileManager.generateMarkdownLink(file, sourcePath, subpath);
+
+  // For non-markdown files, Obsidian may generate an embed syntax (![[...]] or ![...])
+  // Convert embeds to regular links so files display as clickable links, not rendered previews
+  if (file.extension !== 'md' && link.startsWith('!')) {
+    return link.slice(1);
+  }
+
+  return link;
 }
 
 export function getMarkdown(html: string) {
@@ -603,7 +628,9 @@ export async function handleDragOrPaste(
         : `[[${draggable.linktext}]]`;
       const alias = new DOMParser().parseFromString(transfer.getData('text/html'), 'text/html')
         .documentElement.textContent; // Get raw text
-      link = link.replace(/]]$/, `|${alias}]]`).replace(/^\[[^\]].+]\(/, `[${alias}](`);
+      if (alias) {
+        link = link.replace(/]]$/, `|${alias}]]`).replace(/^\[[^\]].+]\(/, `[${alias}](`);
+      }
       return [link];
     }
     default: {

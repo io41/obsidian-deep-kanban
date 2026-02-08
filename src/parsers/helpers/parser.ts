@@ -28,12 +28,45 @@ export function replaceNewLines(str: string) {
 }
 
 export function replaceBrs(str: string) {
-  return str.replace(/<br>/g, '\n').trim();
+  // Split by lines to preserve <br> inside table cells and code blocks
+  const lines = str.split('\n');
+  const result: string[] = [];
+  let inCodeBlock = false;
+
+  for (const line of lines) {
+    // Track code block state (``` markers)
+    if (line.trim().startsWith('```')) {
+      inCodeBlock = !inCodeBlock;
+    }
+
+    // Check if line looks like a table row (contains | character not at line start/end only)
+    const isTableRow = /\|.*\|/.test(line.trim()) || line.trim().startsWith('|');
+
+    if (isTableRow || inCodeBlock) {
+      // Preserve <br> in table cells and code blocks - don't convert them
+      result.push(line);
+    } else {
+      // For non-table/non-code content, convert <br> to newlines
+      result.push(line.replace(/<br>/g, '\n'));
+    }
+  }
+
+  return result.join('\n').trim();
 }
 
 export function indentNewLines(str: string) {
-  const useTab = (app.vault as any).getConfig('useTab');
-  return str.trim().replace(/(?:\r\n|\n)/g, useTab ? '\n\t' : '\n    ');
+  const useTab = ((window as any).app?.vault as any)?.getConfig('useTab');
+  const indent = useTab ? '\t' : '    ';
+  const lines = str.trim().split(/\r?\n/);
+  const listIndent = /^(?:\t| {4})(?=(?:[-*+]|\d+\.)\s)/;
+
+  return lines
+    .map((line, index) => {
+      if (index === 0) return line;
+      const normalizedLine = listIndent.test(line) ? line.replace(/^(?:\t| {4})/, '') : line;
+      return `${indent}${normalizedLine}`;
+    })
+    .join('\n');
 }
 
 export function addBlockId(str: string, item: Item) {
