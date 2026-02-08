@@ -1,10 +1,10 @@
 {
-  "id": "obsidian-kanban",
+  "id": "obsidian-deep-kanban",
   "name": "Kanban",
-  "version": "1.5.2",
+  "version": "0.1.0",
   "minAppVersion": "1.0.0",
-  "description": "Create markdown-backed Kanban boards in Obsidian.",
-  "author": "mgmeyers",
-  "authorUrl": "https://github.com/mgmeyers/obsidian-kanban",
+  "description": "Create nestable Kanban boards in Obsidian. Based on Kanban by mgmyers, with new features and bugfixes.",
+  "author": "jgfaust",
+  "authorUrl": "https://github.com/jgfaust/obsidian-deep-kanban",
   "isDesktopOnly": false
 }
